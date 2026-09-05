@@ -1,0 +1,11 @@
+{
+    "name": "one",
+    "version": "0.1.0",
+    "description": "Dummy package with no dependencies",
+    "keywords": "dummy",
+    "license": "MIT",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {},
+    "executable": false
+}

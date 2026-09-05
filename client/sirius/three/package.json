@@ -1,0 +1,13 @@
+{
+    "name": "three",
+    "version": "0.1.0",
+    "description": "Dummy package depending on one and two",
+    "keywords": "dummy",
+    "license": "MIT",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {
+        "sirius/four": "0.1.0"
+    },
+    "executable": false
+}

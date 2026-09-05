@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "target": "esnext",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["esnext"],
+    "types": [],
+    "paths": {
+      "/*": ["./*"]
+    },
+    "skipLibCheck": true
+  },
+  "include": ["**/*.js"],
+  "files": ["jscore.d.ts", "dist/java.d.ts"],
+  "exclude": ["dist"]
+}
