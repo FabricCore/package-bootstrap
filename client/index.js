@@ -3,18 +3,34 @@ const ClientPlayerBlockBreakEvents = Java.type(
     "net.fabricmc.fabric.api.event.client.player.ClientPlayerBlockBreakEvents",
 );
 const Component = Java.type("net.minecraft.network.chat.Component");
-/** @type {import("../bootstrap/moduleIndex.js")} */
+
+/** @type {typeof import("../bootstrap/loader.js")} */
 /// @ts-expect-error
-const { getModuleIndex } = module.import("../bootstrap/moduleIndex.js", []);
+const { createLoader } = module.import("../bootstrap/loader.js", []);
+
+/**
+ * @typedef {import("../bootstrap/moduleIndex.js")} ModuleIndex
+ * @type {ModuleIndex?}
+ */
+let index = null;
 
 ClientPlayerBlockBreakEvents.AFTER.register(
     new (Java.extend(ClientPlayerBlockBreakEvents.After))({
         afterBlockBreak: (world, player, blockPos, state) => {
+            if (index === null) {
+                index = createLoader("client");
+                index.loadAll();
+                module.onunload = () => {
+                    index?.destroy();
+                };
+            } else {
+                index.destroy();
+                index = null;
+            }
+
             Minecraft.getInstance()
                 .gui.hud.getChat()
-                .addClientSystemMessage(
-                    Component.literal(JSON.stringify(getModuleIndex("client").dag.toposort())),
-                );
+                .addClientSystemMessage(Component.literal("hello"));
         },
     }),
 );

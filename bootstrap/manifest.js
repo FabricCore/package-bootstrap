@@ -1,3 +1,12 @@
+/** @type {typeof import("./semver.js")} */
+/// @ts-expect-error
+const { Semver, SemverPattern } = module.import("./semver.js", []);
+
+/**
+ * @typedef {import("./semver.js").Semver} Semver
+ * @typedef {import("./semver.js").SemverPattern} SemverPattern
+ */
+
 /**
  * @typedef {{
  *   author: string,
@@ -33,8 +42,8 @@ class Manifest {
             throw new Error(
                 `Expected manifest field "version" to be a string, got ${typeof props.version}`,
             );
-        /** @type {string} */
-        this.version = props.version;
+        /** @type {Semver} */
+        this.version = Semver.parse(props.version);
 
         if (typeof props.description !== "string")
             throw new Error(
@@ -68,8 +77,13 @@ class Manifest {
             throw new Error(
                 `Expected manifest field "dependencies" to be a object, got ${typeof props.dependencies}`,
             );
-        /** @type {Record<string, string>} */
-        this.dependencies = props.dependencies;
+        /** @type {Map<string, SemverPattern>} */
+        this.dependencies = new Map(
+            Object.entries(props.dependencies).map(([name, pattern]) => [
+                name,
+                SemverPattern.parse(pattern),
+            ]),
+        );
     }
 
     /** @returns {string} */

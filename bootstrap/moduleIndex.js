@@ -12,6 +12,8 @@ const Dag = module.import("./dag.js", []);
 /**
  * @typedef {import("./dag.js")} Dag
  * @typedef {import("./manifest.js")} Manifest
+ * @typedef {import("./semver.js").SemverPattern} SemverPattern
+ * @typedef {import("./semver.js").Semver} Semver
  */
 
 /** @type {Map<string, ModuleIndex>} */
@@ -24,11 +26,22 @@ class ModuleIndex {
     manifests = new Map();
 
     /**
-     * @param {string} base
+     * @typedef {{
+     *   base: string,
+     *   load: (manifest: Manifest) => void,
+     *   unload: (manifest: Manifest) => void
+     * }} IndexProps
+     *
+     * @param {IndexProps} props
      */
-    constructor(base) {
+    constructor({ base, load, unload }) {
         if (!fileExists(base)) throw new Error(`Could not find base path "${base}"`);
+        /** @type {string} */
         this.base = base;
+        /** @type {(manifest: Manifest) => void} */
+        this.load = load;
+        /** @type {(manifest: Manifest) => void} */
+        this.unload = unload;
 
         const authors = listFiles(base).filter(
             (author) => fileType(pathJoin(base, author)) === "dir",
@@ -74,20 +87,90 @@ class ModuleIndex {
             }
         }
     }
+
+    /**
+     * @typedef {{
+     *   dependent: string,
+     *   dependency: string,
+     *   requiredVersion: SemverPattern,
+     *   error: {kind: "missing"} | {kind: "versionMismatch", gotVersion: Semver }
+     * }} DependencyViolation
+     *
+     * @returns {DependencyViolation[]}
+     */
+    getDependencyViolations() {
+        /** @type {DependencyViolation[]} */
+        let violations = [];
+
+        for (const manifest of this.manifests.values()) {
+            for (const [depName, depVersionPattern] of manifest.dependencies.entries()) {
+                const depManifest = this.manifests.get(depName);
+
+                if (depManifest === undefined)
+                    violations.push({
+                        dependent: manifest.name,
+                        dependency: depName,
+                        requiredVersion: depVersionPattern,
+                        error: { kind: "missing" },
+                    });
+                else if (!depVersionPattern.isMatch(depManifest.version))
+                    violations.push({
+                        dependent: manifest.name,
+                        dependency: depName,
+                        requiredVersion: depVersionPattern,
+                        error: { kind: "versionMismatch", gotVersion: depManifest.version },
+                    });
+            }
+        }
+
+        return violations;
+    }
+
+    /**
+     * @param {string} base
+     * @returns {ModuleIndex}
+     */
+    static getIndex(base) {
+        const foundInstance = instances.get(base);
+
+        if (foundInstance !== undefined) return foundInstance;
+
+        throw new Error(`Module index base=${base} does not exist, maybe create it first?`);
+    }
+
+    /**
+     * @param {IndexProps} props
+     * @returns {ModuleIndex}
+     */
+    static createIndex(props) {
+        const foundInstance = instances.get(props.base);
+
+        if (foundInstance !== undefined)
+            throw new Error(`Creating module index base=${props.base} but it already exists`);
+
+        const newInstance = new ModuleIndex(props);
+        instances.set(props.base, newInstance);
+        return newInstance;
+    }
+
+    destroy() {
+        for (const packageId of this.dag.toposort().reverse()) {
+            const packageManifest = this.manifests.get(packageId);
+            if (packageManifest === undefined)
+                throw new Error(`${packageId} is in DAG but not in manifest index`);
+            this.unload(packageManifest);
+        }
+        instances.delete(this.base);
+    }
+
+    loadAll() {
+        for (const packageId of this.dag.toposort()) {
+            const packageManifest = this.manifests.get(packageId);
+            if (packageManifest === undefined)
+                throw new Error(`${packageId} is in DAG but not in manifest index`);
+            this.load(packageManifest);
+        }
+    }
 }
 
-/**
- * @param {string} base
- * @returns {ModuleIndex}
- */
-function getModuleIndex(base) {
-    const foundInstance = instances.get(base);
-
-    if (foundInstance !== undefined) return foundInstance;
-
-    const newInstance = new ModuleIndex(base);
-    instances.set(base, newInstance);
-    return newInstance;
-}
-
-module.exports = { getModuleIndex };
+module.exports = ModuleIndex;

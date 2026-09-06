@@ -5,6 +5,7 @@
     "noEmit": true,
     "target": "esnext",
     "module": "preserve",
+    "moduleDetection": "force",
     "moduleResolution": "bundler",
     "lib": ["esnext"],
     "types": [],

@@ -7,44 +7,10 @@
  * JsModule.java in jscore-js-runtime.
  */
 
-/**
- * Unwraps the synthetic `default` that TypeScript adds when modelling a
- * `module.exports = ...` file as a dynamic import. For an `export =` module that
- * synthetic default *is* the exports object, so this recovers exactly what
- * `module.import` returns at runtime -- without an `Omit`, which would flatten
- * callable and constructable exports.
- */
-type JscoreExports<T> = T extends { default: infer D } ? D : T;
-
-/**
- * Load a module and return its `module.exports`, resolved relative to *this* file --
- * or against the scripts root when the path starts with `/`.
- *
- * ```js
- * const { readString, getJavaPath } = require("../loader/files.js");
- * ```
- *
- * This declaration is documentation only. TypeScript special-cases `require` in a .js
- * file and types the call from the specifier itself, which is why this is the one
- * import form that needs no registry, no annotation, and no change to any other file
- * when you add a module.
- *
- * The special case is narrow, and the runtime matches it deliberately: the callee must
- * be the bare identifier `require` (a member call such as `module.import(...)` is never
- * special-cased) and it must take exactly one string literal (a second argument
- * disables it). Preludes therefore go through `module.import`.
- *
- * The `.js` extension is required -- there is no extension or index resolution.
- *
- * Bound by JsLangDef.globals in jscore-js-runtime.
- */
-declare function require(path: string): unknown;
-
 interface JscoreModule {
   /**
    * This module's exported value. Assigning `module.exports = ...` is also what
-   * makes TypeScript treat the file as a module, so a `() => import("./x.js")`
-   * loader elsewhere resolves to whatever was assigned here.
+   * makes TypeScript treat the file as a module.
    */
   exports: any;
 
@@ -55,23 +21,13 @@ interface JscoreModule {
   onunload: (() => void) | undefined;
 
   /**
-   * Load a module and return its `module.exports`, applying preludes.
-   *
-   * Prefer `require(path)` -- it is plain, and TypeScript types it natively. Reach
-   * for this only when you need preludes, which `require` cannot carry.
-   *
-   * The module is named by a **loader thunk** rather than a path string:
+   * Load a module and return its `module.exports`, applying preludes, resolved
+   * relative to *this* file -- or against the scripts root when the path starts
+   * with `/`.
    *
    * ```js
-   * const dag = module.import(() => import("../sys/dag.js"), []);
+   * const { readString, getJavaPath } = module.import("../loader/files.js", []);
    * ```
-   *
-   * The thunk is never called. It exists so the specifier is a real `import()`
-   * in *this* file, which is the only construct that makes TypeScript resolve a
-   * module type relative to the calling file -- `typeof import(P)` for a
-   * non-literal `P` is rejected outright (TS1141), so no signature over a path
-   * string can ever infer the right type. JsModule.specifierOf reads the
-   * specifier back out of the thunk's source text.
    *
    * Paths behave exactly like a normal `import`: relative to this file, or
    * root-absolute against the scripts root (`/` is mapped to the project root by
@@ -80,14 +36,31 @@ interface JscoreModule {
    *
    * The `.js` extension is required -- there is no extension or index resolution.
    *
-   * A plain path string is still accepted by the host for backwards compatibility,
-   * but is typed as `unknown` here, since its type cannot be inferred.
+   * The specifier is a plain path string, so its type can't be inferred here --
+   * `typeof import(P)` only works for a literal `P` (TS1141), and `path` is a
+   * parameter, not a literal. Cast the result with an explicit `@type`, and
+   * suppress the resulting mismatch (the call is genuinely typed `unknown`):
+   *
+   * ```js
+   * /** @type {typeof import("./semver.js")} *\/
+   * /// @ts-expect-error
+   * const { Semver, SemverPattern } = module.import("./semver.js", []);
+   * ```
    *
    * @param preludes Names of preludes to apply, must match any previous load of the
    * same module. Required: JsModule rejects a one-argument call.
    */
-  import<T>(loader: () => Promise<T>, preludes: string[]): JscoreExports<T>;
   import(path: string, preludes: string[]): unknown;
+
+  /**
+   * Remove this module's dependency on the module at `path`, resolved the same
+   * way as `import` -- relative to this file, or root-absolute against the
+   * scripts root when the path starts with `/`.
+   *
+   * The values from the unimported module are undefined behaviour after an
+   * unimport.
+   */
+  unimport(path: string): void;
 }
 
 declare var module: JscoreModule;
