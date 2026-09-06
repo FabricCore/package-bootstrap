@@ -6,7 +6,6 @@
  *   description: string,
  *   keywords: string,
  *   license: string,
- *   executable: boolean,
  *   main: string,
  *   dependencies: Record<string, string>
  * }} Props
@@ -57,13 +56,6 @@ class Manifest {
             );
         /** @type {string} */
         this.license = props.license;
-
-        if (typeof props.executable !== "boolean")
-            throw new Error(
-                `Expected manifest field "executable" to be a boolean, got ${typeof props.executable}`,
-            );
-        /** @type {boolean} */
-        this.executable = props.executable;
 
         if (typeof props.main !== "string")
             throw new Error(
