@@ -6,6 +6,5 @@
     "license": "MIT",
     "author": "sirius",
     "main": "index.js",
-    "dependencies": {},
-    "executable": false
+    "dependencies": {}
 }

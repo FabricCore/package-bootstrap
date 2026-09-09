@@ -6,6 +6,7 @@
     "license": "MIT",
     "author": "sirius",
     "main": "index.js",
-    "dependencies": {},
-    "executable": false
+    "dependencies": {
+        "sirius/one": "0.1.0"
+    }
 }

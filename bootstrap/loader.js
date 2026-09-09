@@ -6,6 +6,10 @@ const ModuleIndex = module.import("./moduleIndex.js", []);
 /// @ts-expect-error
 const { pathJoin } = module.import("./files.js", []);
 
+/** @type {typeof import("./prelude.js")} */
+/// @ts-expect-error
+const { require } = module.import("./prelude.js", []);
+
 /**
  * @typedef {import("./moduleIndex.js")} ModuleIndex
  * @param {string} base
@@ -18,7 +22,7 @@ function createLoader(base) {
             try {
                 const mainPath = pathJoin("/", base, manifest.author, manifest.name, manifest.main);
                 /// @ts-expect-error
-                module.import(mainPath, []);
+                module.import(mainPath, [require]);
             } catch (e) {
                 console.log(e);
                 // TODO: load errors

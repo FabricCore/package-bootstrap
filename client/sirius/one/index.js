@@ -6,3 +6,7 @@ Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(Component.liter
 module.onunload = () => {
     console.log("unload 1");
 };
+
+module.exports = {
+    pi: 3.14
+}
