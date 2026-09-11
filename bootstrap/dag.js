@@ -90,6 +90,36 @@ class Dag {
 
         return ordering;
     }
+
+    /**
+     * find transitive dependents of a set, includes the set
+     *
+     * @param {Set<string>} ids
+     * @returns {Set<string>}
+     */
+    dependentsOf(ids) {
+        /** @type {Set<string>} */
+        let dependents = new Set();
+
+        /**
+         * @param {DagNode} node
+         */
+        const dfs = (node) => {
+            if (dependents.has(node.id)) return;
+
+            dependents.add(node.id);
+            node.outgoing.forEach(dfs);
+        };
+
+        ids.forEach((id) => {
+            const node = this.nodes.get(id);
+            if (node === undefined) throw new Error(`node ${id} is not in DAG`);
+
+            dfs(node);
+        });
+
+        return dependents;
+    }
 }
 
 module.exports = Dag;

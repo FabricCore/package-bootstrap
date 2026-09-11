@@ -26,6 +26,26 @@ class ModuleIndex {
     manifests = new Map();
 
     /**
+     * @param {Map<string, Manifest>} manifests
+     * @returns {Dag}
+     */
+    static dagFromManifests(manifests) {
+        let out = new Dag();
+
+        manifests.keys().forEach((id) => out.addNode(id));
+        manifests.values().forEach((manifest) =>
+            manifest.dependencies.keys().forEach((dependency) => {
+                if (!manifests.has(dependency))
+                    throw new Error(`${manifest.id} requires ${dependency} but is not present`);
+
+                out.addEdge(dependency, manifest.id);
+            }),
+        );
+
+        return out;
+    }
+
+    /**
      * @typedef {{
      *   base: string,
      *   load: (manifest: Manifest) => void,
@@ -53,16 +73,7 @@ class ModuleIndex {
             );
 
             for (const packageName of packages) {
-                if (!fileExists(pathJoin(base, author, packageName, "package.json")))
-                    throw new Error(
-                        `package.json not found for package ${base}/${author}/${packageName}`,
-                    );
-
-                // TODO: add debug logging so we know which package failed to be indexed
-                const manifestContent = readFile(
-                    pathJoin(base, author, packageName, "package.json"),
-                );
-                const manifest = new Manifest(JSON.parse(manifestContent));
+                const manifest = ModuleIndex.readManifest(pathJoin(base, author, packageName, "package.json"));
 
                 if (manifest.author !== author)
                     throw new Error(
@@ -74,18 +85,26 @@ class ModuleIndex {
                     );
 
                 this.manifests.set(manifest.id, manifest);
-                this.dag.addNode(manifest.id);
             }
         }
 
-        for (const manifest of this.manifests.values()) {
-            for (const dependency of Object.keys(manifest.dependencies)) {
-                if (!this.manifests.has(dependency))
-                    throw new Error(`${manifest.id} requires ${dependency} but is not present`);
+        this.dag = ModuleIndex.dagFromManifests(this.manifests);
+    }
 
-                this.dag.addEdge(dependency, manifest.id);
-            }
-        }
+    /**
+     * @param {string} packageRoot 
+     * @returns {Manifest}
+     */
+    static readManifest(packageRoot) {
+        const realPath = pathJoin(packageRoot, "package.json");
+        if (!fileExists(realPath))
+            throw new Error(
+                `package.json not found in ${realPath}`,
+            );
+
+        // TODO: add debug logging so we know which package failed to be indexed
+        const manifestContent = readFile(realPath);
+        return new Manifest(JSON.parse(manifestContent));
     }
 
     /**
@@ -96,15 +115,16 @@ class ModuleIndex {
      *   error: {kind: "missing"} | {kind: "versionMismatch", gotVersion: Semver }
      * }} DependencyViolation
      *
+     * @param {Map<string, Manifest>} manifests
      * @returns {DependencyViolation[]}
      */
-    getDependencyViolations() {
+    static getDependencyViolations(manifests) {
         /** @type {DependencyViolation[]} */
         let violations = [];
 
-        for (const manifest of this.manifests.values()) {
+        for (const manifest of manifests.values()) {
             for (const [depName, depVersionPattern] of manifest.dependencies.entries()) {
-                const depManifest = this.manifests.get(depName);
+                const depManifest = manifests.get(depName);
 
                 if (depManifest === undefined)
                     violations.push({
@@ -169,6 +189,74 @@ class ModuleIndex {
             if (packageManifest === undefined)
                 throw new Error(`${packageId} is in DAG but not in manifest index`);
             this.load(packageManifest);
+        }
+    }
+
+    /**
+     * @typedef {string} PackagePath
+     * @typedef {string} PackageId
+     * @typedef {{
+     *   toLoad?: PackagePath[],
+     *   toReplace?: PackagePath[],
+     *   toUnload?: PackageId[],
+     *   apply: boolean
+     * }} ChangeRequest
+     *
+     * @param {ChangeRequest} changes
+     *
+     * the 3 sets should be disjoint, but are not
+     * @typedef {{ type: "nondisjoint", ids: string[] }} NonDisjointRejection
+     * @typedef {{ type: "un/reload notfound", ids: string[] }} UnloadReloadNotFoundRejection
+     *
+     * @typedef {NonDisjointRejection | UnloadReloadNotFoundRejection} RejectionReason
+     * @typedef {{result: "rejected", reason: RejectionReason[]}} Rejection
+     * @typedef {{result: "accepted"}} Accept
+     *
+     * @returns {Rejection | Accept}
+     */
+    propose({ toLoad, toReplace, toUnload }) {
+        // =========== reading manifests ============
+        const toLoadManifests = toLoad?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
+        const toReplaceManifests = toReplace?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
+
+        // ================= validate nondisjoint ======================
+        const toLoadSet = new Set(toLoadManifests.map((manifest) => manifest.manifest.id));
+        const toReplaceSet = new Set(toReplaceManifests.map((manifest) => manifest.manifest.id));
+        const toUnloadSet = new Set(toUnload);
+
+        const loadReplaceInter = toLoadSet.intersection(toReplaceSet);
+        const unloadReplaceInter = toUnloadSet.intersection(toReplaceSet);
+        const loadUnloadInter = toUnloadSet.intersection(toLoadSet);
+
+        /** @type {RejectionReason[]} */
+        let rejectReasons = [];
+
+        /** @returns {Rejection} */
+        function mkReject() {
+            if (rejectReasons.length === 0) throw new Error("Cannot reject without a reason");
+
+            return {
+                result: "rejected",
+                reason: rejectReasons,
+            };
+        }
+
+        const intersection = loadReplaceInter.union(unloadReplaceInter).union(loadUnloadInter);
+        if (intersection.size !== 0) {
+            rejectReasons.push({ type: "nondisjoint", ids: Array.from(intersection).sort() });
+            return mkReject();
+        }
+
+        // ====== validate unload and reloads are packages that are currently loaded ======
+        const toUnloadNotFound = Array.from(toUnloadSet).filter((id) => !this.manifests.has(id));
+        const toReplaceNotFound = Array.from(toReplaceSet).filter((id) => !this.manifests.has(id));
+
+        if (toUnloadNotFound.length || toReplaceNotFound.length) {
+            rejectReasons.push({
+                type: "un/reload notfound",
+                ids: toUnloadNotFound.concat(toReplaceNotFound).sort(),
+            });
+            return mkReject();
         }
     }
 }

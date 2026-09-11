@@ -1,7 +1,5 @@
 {
-    "entryPoints": [
-        "./bootstrap/moduleIndex.js"
-    ],
+    "entryPoints": ["./bootstrap/moduleIndex.js"],
     "entryPointStrategy": "expand",
     "tsconfig": "./jsconfig.json",
     "out": "docs",

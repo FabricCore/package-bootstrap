@@ -3,5 +3,5 @@ const require = globalThis.module.createPrelude((targetGlobal, targetModule) => 
 });
 
 module.exports = {
-    require
-}
+    require,
+};
