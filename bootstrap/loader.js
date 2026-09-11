@@ -10,13 +10,16 @@ const { pathJoin } = module.import("./files.js", []);
 /// @ts-expect-error
 const { require } = module.import("./prelude.js", []);
 
+/** @type {Set<ModuleIndex>} */
+let createdIndices = new Set();
+
 /**
  * @typedef {import("./moduleIndex.js")} ModuleIndex
  * @param {string} base
  * @returns {ModuleIndex}
  */
 function createLoader(base) {
-    return ModuleIndex.createIndex({
+    const index = ModuleIndex.createIndex({
         base,
         load: (manifest) => {
             try {
@@ -39,6 +42,14 @@ function createLoader(base) {
             }
         },
     });
+
+    createdIndices.add(index);
+
+    return index;
+}
+
+module.onunload = () => {
+    createdIndices.forEach(index => index.destroy());
 }
 
 module.exports = { createLoader };

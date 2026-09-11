@@ -73,7 +73,7 @@ class ModuleIndex {
             );
 
             for (const packageName of packages) {
-                const manifest = ModuleIndex.readManifest(pathJoin(base, author, packageName, "package.json"));
+                const manifest = ModuleIndex.readManifest(pathJoin(base, author, packageName));
 
                 if (manifest.author !== author)
                     throw new Error(
@@ -128,14 +128,14 @@ class ModuleIndex {
 
                 if (depManifest === undefined)
                     violations.push({
-                        dependent: manifest.name,
+                        dependent: manifest.id,
                         dependency: depName,
                         requiredVersion: depVersionPattern,
                         error: { kind: "missing" },
                     });
                 else if (!depVersionPattern.isMatch(depManifest.version))
                     violations.push({
-                        dependent: manifest.name,
+                        dependent: manifest.id,
                         dependency: depName,
                         requiredVersion: depVersionPattern,
                         error: { kind: "versionMismatch", gotVersion: depManifest.version },
@@ -205,16 +205,28 @@ class ModuleIndex {
      * @param {ChangeRequest} changes
      *
      * the 3 sets should be disjoint, but are not
-     * @typedef {{ type: "nondisjoint", ids: string[] }} NonDisjointRejection
-     * @typedef {{ type: "un/reload notfound", ids: string[] }} UnloadReloadNotFoundRejection
+     * @typedef {{ type: "nonDisjoint", ids: string[] }} NonDisjointRejection
      *
-     * @typedef {NonDisjointRejection | UnloadReloadNotFoundRejection} RejectionReason
-     * @typedef {{result: "rejected", reason: RejectionReason[]}} Rejection
+     * requseting load but another package already has that ID
+     * @typedef {{ type: "loadNameCollision", ids: string[] }} LoadNameCollisionRejection
+     *
+     * unloading or replace a package that is not already loading
+     * @typedef {{ type: "unloadReplaceNonExistingPackage", ids: string[] }} UnloadReplaceNotFoundRejection
+     *
+     * a dependent is not unloaded, blocking the package from unloading
+     * @typedef {{ type: "dependentBlocksUnload", packages: PackageThatCannotUnload[] }} DepBlocksUnloadRejection
+     * @typedef {{id: string, requiredBy: string[]}} PackageThatCannotUnload
+     *
+     * there is a dependency violation
+     * @typedef {{ type: "dependencyViolation", cases: DependencyViolation[]}} DependencyViolationRejection
+     *
+     * @typedef {NonDisjointRejection | LoadNameCollisionRejection | UnloadReplaceNotFoundRejection | DepBlocksUnloadRejection | DependencyViolationRejection} RejectionReason
+     * @typedef {{result: "rejected", reason: RejectionReason}} Rejection
      * @typedef {{result: "accepted"}} Accept
      *
      * @returns {Rejection | Accept}
      */
-    propose({ toLoad, toReplace, toUnload }) {
+    propose({ toLoad, toReplace, toUnload, apply }) {
         // =========== reading manifests ============
         const toLoadManifests = toLoad?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
         const toReplaceManifests = toReplace?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
@@ -228,23 +240,20 @@ class ModuleIndex {
         const unloadReplaceInter = toUnloadSet.intersection(toReplaceSet);
         const loadUnloadInter = toUnloadSet.intersection(toLoadSet);
 
-        /** @type {RejectionReason[]} */
-        let rejectReasons = [];
-
-        /** @returns {Rejection} */
-        function mkReject() {
-            if (rejectReasons.length === 0) throw new Error("Cannot reject without a reason");
-
+        /**
+         * @param {RejectionReason} reason 
+         * @returns {Rejection}
+         */
+        function mkReject(reason) {
             return {
                 result: "rejected",
-                reason: rejectReasons,
+                reason,
             };
         }
 
         const intersection = loadReplaceInter.union(unloadReplaceInter).union(loadUnloadInter);
         if (intersection.size !== 0) {
-            rejectReasons.push({ type: "nondisjoint", ids: Array.from(intersection).sort() });
-            return mkReject();
+            return mkReject({ type: "nonDisjoint", ids: Array.from(intersection) });
         }
 
         // ====== validate unload and reloads are packages that are currently loaded ======
@@ -252,11 +261,53 @@ class ModuleIndex {
         const toReplaceNotFound = Array.from(toReplaceSet).filter((id) => !this.manifests.has(id));
 
         if (toUnloadNotFound.length || toReplaceNotFound.length) {
-            rejectReasons.push({
-                type: "un/reload notfound",
-                ids: toUnloadNotFound.concat(toReplaceNotFound).sort(),
+            return mkReject({
+                type: "unloadReplaceNonExistingPackage",
+                ids: toUnloadNotFound.concat(toReplaceNotFound),
             });
-            return mkReject();
+        }
+
+        // ====== validate load are packages that are currently not loaded ======
+        const toLoadUnexpected = Array.from(toLoadSet).filter(id => this.manifests.has(id));
+        if (toLoadUnexpected.length) {
+            return mkReject({
+                type: "loadNameCollision",
+                ids: toLoadUnexpected
+            })
+        }
+
+        // ====== check if graph is consistent after unload =======
+        const toReplaceUnloads = this.dag.dependentsOf(toReplaceSet);
+        /** @type {PackageThatCannotUnload[]} */
+        let packagesThatCannotUnload = [];
+        toUnloadSet.forEach(id => {
+            const dependentsNotUnloaded = this.dag.immediateDependentsOf(id).filter(depId => !toReplaceUnloads.has(depId) && !toUnloadSet.has(depId));
+
+            if (dependentsNotUnloaded.length !== 0)
+                packagesThatCannotUnload.push({
+                    id,
+                    requiredBy: dependentsNotUnloaded
+                });
+        });
+
+        if (packagesThatCannotUnload.length !== 0)
+            return mkReject({ type: "dependentBlocksUnload", packages: packagesThatCannotUnload });
+
+        // ====== check if graph is consistent after load =======
+        let manifestsAfterLoad = new Map(this.manifests);
+        toUnloadSet.forEach(id => manifestsAfterLoad.delete(id));
+        toLoadManifests.forEach(({ manifest }) => manifestsAfterLoad.set(manifest.id, manifest));
+        toReplaceManifests.forEach(({ manifest }) => manifestsAfterLoad.set(manifest.id, manifest));
+
+        const dependencyViolations = ModuleIndex.getDependencyViolations(manifestsAfterLoad);
+        if (dependencyViolations.length)
+            return mkReject({ type: "dependencyViolation", cases: dependencyViolations });
+
+        if (apply) {
+        }
+
+        return {
+            result: "accepted"
         }
     }
 }
