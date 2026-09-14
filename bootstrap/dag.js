@@ -122,15 +122,14 @@ class Dag {
     }
 
     /**
-     * @param {string} id 
+     * @param {string} id
      * @returns {string[]}
      */
     immediateDependentsOf(id) {
         const node = this.nodes.get(id);
-        if (node === undefined)
-            throw new Error(`${id} is not in DAG`)
+        if (node === undefined) throw new Error(`${id} is not in DAG`);
 
-        return Array.from(node.outgoing).map(node => node.id);
+        return Array.from(node.outgoing).map((node) => node.id);
     }
 }
 

@@ -1,6 +1,9 @@
 /** @type {typeof import("./semver.js")} */
 /// @ts-expect-error
 const { Semver, SemverPattern } = module.import("./semver.js", []);
+/** @type {typeof import("./files.js")} */
+/// @ts-expect-error
+const { pathJoin } = module.import("./files.js", []);
 
 /**
  * @typedef {import("./semver.js").Semver} Semver
@@ -89,6 +92,14 @@ class Manifest {
     /** @returns {string} */
     get id() {
         return `${this.author}/${this.name}`;
+    }
+
+    /**
+     * @param {string} base
+     * @returns {string}
+     */
+    getRoot(base) {
+        return pathJoin("/", base, this.author, this.name);
     }
 }
 

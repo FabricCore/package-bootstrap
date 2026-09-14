@@ -23,8 +23,7 @@ function createLoader(base) {
         base,
         load: (manifest) => {
             try {
-                const mainPath = pathJoin("/", base, manifest.author, manifest.name, manifest.main);
-                /// @ts-expect-error
+                const mainPath = pathJoin(manifest.getRoot(base), manifest.main);
                 module.import(mainPath, [require]);
             } catch (e) {
                 console.log(e);
@@ -33,8 +32,7 @@ function createLoader(base) {
         },
         unload: (manifest) => {
             try {
-                const mainPath = pathJoin("/", base, manifest.author, manifest.name, manifest.main);
-                /// @ts-expect-error
+                const mainPath = pathJoin(manifest.getRoot(base), manifest.main);
                 module.unimport(mainPath);
             } catch (e) {
                 console.log(e);
@@ -49,7 +47,7 @@ function createLoader(base) {
 }
 
 module.onunload = () => {
-    createdIndices.forEach(index => index.destroy());
-}
+    createdIndices.forEach((index) => index.destroy());
+};
 
 module.exports = { createLoader };

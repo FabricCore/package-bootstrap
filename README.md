@@ -19,6 +19,9 @@ config that looks like
     {
       "jar": "fabric-api.jar",
     },
+    {
+      "jar": "~/.gradle/caches/.../commons-io-2.20.0.jar"
+    }
   ],
   "classpathOnly": [],
   "jsdoc": "params",
@@ -42,4 +45,26 @@ config that looks like
     ],
   },
 }
+```
+
+Bootstrap dependency graph
+
+```mermaid
+---
+config:
+---
+
+flowchart LR
+client/index.js --> loader.js
+loader.js --> client/*
+loader.js --> files.js
+loader.js --> prelude.js
+loader.js --> moduleIndex.js
+client/* --> api.js
+api.js --> moduleIndex.js
+moduleIndex.js --> files.js
+moduleIndex.js --> manifest.js
+moduleIndex.js --> dag.js
+manifest.js --> semver.js
+manifest.js --> files.js
 ```

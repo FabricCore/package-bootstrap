@@ -1,10 +1,12 @@
 /** @type {typeof import("./manifest.js")} */
-
 /// @ts-expect-error
 const Manifest = module.import("./manifest.js", []);
 /** @type {typeof import("./files.js")} */
 /// @ts-expect-error
-const { readFile, listFiles, fileType, fileExists, pathJoin } = module.import("./files.js", []);
+const { readFile, listFiles, fileType, fileExists, pathJoin, rm, copyDirectory } = module.import(
+    "./files.js",
+    [],
+);
 /** @type {typeof import("./dag.js")} */
 /// @ts-expect-error
 const Dag = module.import("./dag.js", []);
@@ -14,6 +16,36 @@ const Dag = module.import("./dag.js", []);
  * @typedef {import("./manifest.js")} Manifest
  * @typedef {import("./semver.js").SemverPattern} SemverPattern
  * @typedef {import("./semver.js").Semver} Semver
+ *
+ * @typedef {string} PackagePath
+ * @typedef {string} PackageId
+ * @typedef {{
+ *   toLoad?: PackagePath[],
+ *   toReplace?: PackagePath[],
+ *   toUnload?: PackageId[],
+ *   apply: boolean
+ * }} ChangeRequest
+ *
+ *
+ * the 3 sets should be disjoint, but are not
+ * @typedef {{ type: "nonDisjoint", ids: string[] }} NonDisjointRejection
+ *
+ * requseting load but another package already has that ID
+ * @typedef {{ type: "loadNameCollision", ids: string[] }} LoadNameCollisionRejection
+ *
+ * unloading or replace a package that is not already loading
+ * @typedef {{ type: "unloadReplaceNonExistingPackage", ids: string[] }} UnloadReplaceNotFoundRejection
+ *
+ * a dependent is not unloaded, blocking the package from unloading
+ * @typedef {{ type: "dependentBlocksUnload", packages: PackageThatCannotUnload[] }} DepBlocksUnloadRejection
+ * @typedef {{id: string, requiredBy: string[]}} PackageThatCannotUnload
+ *
+ * there is a dependency violation
+ * @typedef {{ type: "dependencyViolation", cases: DependencyViolation[]}} DependencyViolationRejection
+ *
+ * @typedef {NonDisjointRejection | LoadNameCollisionRejection | UnloadReplaceNotFoundRejection | DepBlocksUnloadRejection | DependencyViolationRejection} RejectionReason
+ * @typedef {{result: "rejected", reason: RejectionReason}} Rejection
+ * @typedef {{result: "accepted"}} Accept
  */
 
 /** @type {Map<string, ModuleIndex>} */
@@ -92,15 +124,12 @@ class ModuleIndex {
     }
 
     /**
-     * @param {string} packageRoot 
+     * @param {string} packageRoot
      * @returns {Manifest}
      */
     static readManifest(packageRoot) {
         const realPath = pathJoin(packageRoot, "package.json");
-        if (!fileExists(realPath))
-            throw new Error(
-                `package.json not found in ${realPath}`,
-            );
+        if (!fileExists(realPath)) throw new Error(`package.json not found in ${realPath}`);
 
         // TODO: add debug logging so we know which package failed to be indexed
         const manifestContent = readFile(realPath);
@@ -173,6 +202,16 @@ class ModuleIndex {
         return newInstance;
     }
 
+    reload() {
+        this.destroy();
+        const newIndex = ModuleIndex.createIndex({
+            base: this.base,
+            load: this.load,
+            unload: this.unload,
+        });
+        newIndex.loadAll();
+    }
+
     destroy() {
         for (const packageId of this.dag.toposort().reverse()) {
             const packageManifest = this.manifests.get(packageId);
@@ -193,43 +232,21 @@ class ModuleIndex {
     }
 
     /**
-     * @typedef {string} PackagePath
-     * @typedef {string} PackageId
-     * @typedef {{
-     *   toLoad?: PackagePath[],
-     *   toReplace?: PackagePath[],
-     *   toUnload?: PackageId[],
-     *   apply: boolean
-     * }} ChangeRequest
-     *
      * @param {ChangeRequest} changes
-     *
-     * the 3 sets should be disjoint, but are not
-     * @typedef {{ type: "nonDisjoint", ids: string[] }} NonDisjointRejection
-     *
-     * requseting load but another package already has that ID
-     * @typedef {{ type: "loadNameCollision", ids: string[] }} LoadNameCollisionRejection
-     *
-     * unloading or replace a package that is not already loading
-     * @typedef {{ type: "unloadReplaceNonExistingPackage", ids: string[] }} UnloadReplaceNotFoundRejection
-     *
-     * a dependent is not unloaded, blocking the package from unloading
-     * @typedef {{ type: "dependentBlocksUnload", packages: PackageThatCannotUnload[] }} DepBlocksUnloadRejection
-     * @typedef {{id: string, requiredBy: string[]}} PackageThatCannotUnload
-     *
-     * there is a dependency violation
-     * @typedef {{ type: "dependencyViolation", cases: DependencyViolation[]}} DependencyViolationRejection
-     *
-     * @typedef {NonDisjointRejection | LoadNameCollisionRejection | UnloadReplaceNotFoundRejection | DepBlocksUnloadRejection | DependencyViolationRejection} RejectionReason
-     * @typedef {{result: "rejected", reason: RejectionReason}} Rejection
-     * @typedef {{result: "accepted"}} Accept
-     *
      * @returns {Rejection | Accept}
      */
     propose({ toLoad, toReplace, toUnload, apply }) {
         // =========== reading manifests ============
-        const toLoadManifests = toLoad?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
-        const toReplaceManifests = toReplace?.map(packageRoot => ({ packageRoot, manifest: ModuleIndex.readManifest(packageRoot) })) ?? [];
+        const toLoadManifests =
+            toLoad?.map((packageRoot) => ({
+                packageRoot,
+                manifest: ModuleIndex.readManifest(packageRoot),
+            })) ?? [];
+        const toReplaceManifests =
+            toReplace?.map((packageRoot) => ({
+                packageRoot,
+                manifest: ModuleIndex.readManifest(packageRoot),
+            })) ?? [];
 
         // ================= validate nondisjoint ======================
         const toLoadSet = new Set(toLoadManifests.map((manifest) => manifest.manifest.id));
@@ -241,7 +258,7 @@ class ModuleIndex {
         const loadUnloadInter = toUnloadSet.intersection(toLoadSet);
 
         /**
-         * @param {RejectionReason} reason 
+         * @param {RejectionReason} reason
          * @returns {Rejection}
          */
         function mkReject(reason) {
@@ -268,25 +285,27 @@ class ModuleIndex {
         }
 
         // ====== validate load are packages that are currently not loaded ======
-        const toLoadUnexpected = Array.from(toLoadSet).filter(id => this.manifests.has(id));
+        const toLoadUnexpected = Array.from(toLoadSet).filter((id) => this.manifests.has(id));
         if (toLoadUnexpected.length) {
             return mkReject({
                 type: "loadNameCollision",
-                ids: toLoadUnexpected
-            })
+                ids: toLoadUnexpected,
+            });
         }
 
         // ====== check if graph is consistent after unload =======
         const toReplaceUnloads = this.dag.dependentsOf(toReplaceSet);
         /** @type {PackageThatCannotUnload[]} */
         let packagesThatCannotUnload = [];
-        toUnloadSet.forEach(id => {
-            const dependentsNotUnloaded = this.dag.immediateDependentsOf(id).filter(depId => !toReplaceUnloads.has(depId) && !toUnloadSet.has(depId));
+        toUnloadSet.forEach((id) => {
+            const dependentsNotUnloaded = this.dag
+                .immediateDependentsOf(id)
+                .filter((depId) => !toReplaceUnloads.has(depId) && !toUnloadSet.has(depId));
 
             if (dependentsNotUnloaded.length !== 0)
                 packagesThatCannotUnload.push({
                     id,
-                    requiredBy: dependentsNotUnloaded
+                    requiredBy: dependentsNotUnloaded,
                 });
         });
 
@@ -295,7 +314,7 @@ class ModuleIndex {
 
         // ====== check if graph is consistent after load =======
         let manifestsAfterLoad = new Map(this.manifests);
-        toUnloadSet.forEach(id => manifestsAfterLoad.delete(id));
+        toUnloadSet.forEach((id) => manifestsAfterLoad.delete(id));
         toLoadManifests.forEach(({ manifest }) => manifestsAfterLoad.set(manifest.id, manifest));
         toReplaceManifests.forEach(({ manifest }) => manifestsAfterLoad.set(manifest.id, manifest));
 
@@ -304,11 +323,56 @@ class ModuleIndex {
             return mkReject({ type: "dependencyViolation", cases: dependencyViolations });
 
         if (apply) {
+            // ===== unload everything that needs to be unloaded =====
+            this.dag
+                .toposort()
+                .reverse()
+                .filter((id) => toUnloadSet.has(id) || toReplaceUnloads.has(id))
+                .map((id) => this.manifests.get(id))
+                .map((manifest) => {
+                    if (manifest === undefined)
+                        throw new Error("unreachable because there's already a check above");
+                    return manifest;
+                })
+                .forEach((manifest) => this.unload(manifest));
+
+            // ====== move the files around =====
+            Array.from(toUnloadSet)
+                .map((id) => this.manifests.get(id))
+                .map((manifest) => {
+                    if (manifest === undefined)
+                        throw new Error("unreachable because there's already a check above");
+                    return manifest;
+                })
+                .forEach((manifest) => rm(manifest.getRoot(this.base)));
+            toLoadManifests.forEach(({ packageRoot, manifest }) =>
+                copyDirectory(packageRoot, manifest.getRoot(this.base), { overwrite: true }),
+            );
+            toReplaceManifests.forEach(({ packageRoot, manifest }) =>
+                copyDirectory(packageRoot, manifest.getRoot(this.base), { overwrite: true }),
+            );
+
+            // ===== load the packages back in =======
+            this.manifests = manifestsAfterLoad;
+            this.dag = ModuleIndex.dagFromManifests(this.manifests);
+
+            // dependents that has been unloaded because of toReplace, and should be loaded back in
+            const toReplaceRestoreSet = toReplaceUnloads.difference(toUnloadSet);
+            this.dag
+                .toposort()
+                .filter((id) => toLoadSet.has(id) || toReplaceRestoreSet.has(id))
+                .map((id) => this.manifests.get(id))
+                .map((manifest) => {
+                    if (manifest === undefined)
+                        throw new Error("unreachable because there's already a check above");
+                    return manifest;
+                })
+                .forEach((manifest) => this.load(manifest));
         }
 
         return {
-            result: "accepted"
-        }
+            result: "accepted",
+        };
     }
 }
 
