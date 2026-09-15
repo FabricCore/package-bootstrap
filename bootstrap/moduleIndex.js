@@ -80,7 +80,7 @@ class ModuleIndex {
     /**
      * @typedef {{
      *   base: string,
-     *   load: (manifest: Manifest) => void,
+     *   load: (manifest: Manifest, preludes: JscorePrelude[]) => JscoreExports,
      *   unload: (manifest: Manifest) => void
      * }} IndexProps
      *
@@ -90,10 +90,26 @@ class ModuleIndex {
         if (!fileExists(base)) throw new Error(`Could not find base path "${base}"`);
         /** @type {string} */
         this.base = base;
-        /** @type {(manifest: Manifest) => void} */
+        /**
+         * function to import a package
+         * @type {(manifest: Manifest, preludes: JscorePrelude[]) => JscoreExports}
+         */
         this.load = load;
-        /** @type {(manifest: Manifest) => void} */
+        /**
+         * function to unimport a package
+         * @type {(manifest: Manifest) => void}
+         */
         this.unload = unload;
+        /**
+         * what prelude does each package exports
+         * @type {Map<string, JscorePrelude>}
+         */
+        this.exportedPreludes = new Map();
+        /**
+         * what preludes does each package uses
+         * @type {Map<string, JscorePrelude[]>}
+         */
+        this.requiredPreludes = new Map();
 
         const authors = listFiles(base).filter(
             (author) => fileType(pathJoin(base, author)) === "dir",
@@ -217,7 +233,7 @@ class ModuleIndex {
             const packageManifest = this.manifests.get(packageId);
             if (packageManifest === undefined)
                 throw new Error(`${packageId} is in DAG but not in manifest index`);
-            this.unload(packageManifest);
+            this.unloadOne(packageManifest);
         }
         instances.delete(this.base);
     }
@@ -227,8 +243,45 @@ class ModuleIndex {
             const packageManifest = this.manifests.get(packageId);
             if (packageManifest === undefined)
                 throw new Error(`${packageId} is in DAG but not in manifest index`);
-            this.load(packageManifest);
+            this.loadOne(packageManifest);
         }
+    }
+
+    /**
+     * @private
+     * @param {Manifest} manifest
+     * @returns {void}
+     */
+    loadOne(manifest) {
+        // TODO: load order should be toposorted
+        const requiredPrelude = Array.from(
+            new Set(
+                manifest.dependencies.keys().flatMap((id) => {
+                    const prelude = this.exportedPreludes.get(id);
+                    const transitivePreludes = this.requiredPreludes.get(id) ?? [];
+                    return prelude ? [prelude, ...transitivePreludes] : transitivePreludes;
+                }),
+            ),
+        );
+
+        this.requiredPreludes.set(manifest.id, requiredPrelude);
+        const res = this.load(manifest, requiredPrelude);
+
+        if (typeof res !== "object" || res === null) return;
+
+        const prelude = res.prelude;
+        if (prelude) this.exportedPreludes.set(manifest.id, prelude);
+    }
+
+    /**
+     * @private
+     * @param {Manifest} manifest
+     * @returns {void}
+     */
+    unloadOne(manifest) {
+        this.unload(manifest);
+        this.exportedPreludes.delete(manifest.id);
+        this.requiredPreludes.delete(manifest.id);
     }
 
     /**
@@ -334,7 +387,7 @@ class ModuleIndex {
                         throw new Error("unreachable because there's already a check above");
                     return manifest;
                 })
-                .forEach((manifest) => this.unload(manifest));
+                .forEach((manifest) => this.unloadOne(manifest));
 
             // ====== move the files around =====
             Array.from(toUnloadSet)
@@ -367,7 +420,7 @@ class ModuleIndex {
                         throw new Error("unreachable because there's already a check above");
                     return manifest;
                 })
-                .forEach((manifest) => this.load(manifest));
+                .forEach((manifest) => this.loadOne(manifest));
         }
 
         return {

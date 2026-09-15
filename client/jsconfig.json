@@ -1,0 +1,11 @@
+{
+    "extends": "../jsconfig.base.json",
+    "compilerOptions": {
+        "paths": {
+            "/*": ["../*"],
+            "*": ["./*"]
+        }
+    },
+    "include": ["**/*.js", "../bootstrap/**/*.js"],
+    "files": ["../jscore.d.ts", "../dist/java.d.ts"]
+}

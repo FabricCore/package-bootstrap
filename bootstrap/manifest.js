@@ -16,7 +16,7 @@ const { pathJoin } = module.import("./files.js", []);
  *   name: string,
  *   version: string,
  *   description: string,
- *   keywords: string,
+ *   keywords: string[],
  *   license: string,
  *   main: string,
  *   dependencies: Record<string, string>
@@ -55,11 +55,11 @@ class Manifest {
         /** @type {string} */
         this.description = props.description;
 
-        if (typeof props.keywords !== "string")
+        if (!Array.isArray(props.keywords))
             throw new Error(
-                `Expected manifest field "keywords" to be a string, got ${typeof props.keywords}`,
+                `Expected manifest field "keywords" to be a string[], got ${typeof props.keywords}`,
             );
-        /** @type {string} */
+        /** @type {string[]} */
         this.keywords = props.keywords;
 
         if (typeof props.license !== "string")

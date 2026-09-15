@@ -2,7 +2,9 @@
     "name": "two",
     "version": "0.1.0",
     "description": "Dummy package with no dependencies",
-    "keywords": "dummy",
+    "keywords": [
+        "dummy"
+    ],
     "license": "MIT",
     "author": "sirius",
     "main": "index.js",

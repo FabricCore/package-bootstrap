@@ -10,8 +10,8 @@ const { pathJoin } = module.import("./files.js", []);
 /// @ts-expect-error
 const { require } = module.import("./prelude.js", []);
 
-/** @type {Set<ModuleIndex>} */
-let createdIndices = new Set();
+/** @type {Map<string, ModuleIndex>} */
+let createdIndices = new Map();
 
 /**
  * @typedef {import("./moduleIndex.js")} ModuleIndex
@@ -21,10 +21,13 @@ let createdIndices = new Set();
 function createLoader(base) {
     const index = ModuleIndex.createIndex({
         base,
-        load: (manifest) => {
+        load: (manifest, preludes) => {
             try {
                 const mainPath = pathJoin(manifest.getRoot(base), manifest.main);
-                module.import(mainPath, [require]);
+                /** @type {JscoreExports} */
+                /// @ts-expect-error
+                const exports = module.import(mainPath, [require, ...preludes]);
+                return exports;
             } catch (e) {
                 console.log(e);
                 // TODO: load errors
@@ -41,13 +44,25 @@ function createLoader(base) {
         },
     });
 
-    createdIndices.add(index);
+    createdIndices.set(base, index);
 
     return index;
+}
+
+/**
+ * @param {string} base
+ * @returns {void}
+ */
+function destroyLoader(base) {
+    if (!createdIndices.has(base))
+        throw new Error(`Cannot destroy loader base=${base} because it does not exist`);
+
+    createdIndices.get(base)?.destroy();
+    createdIndices.delete(base);
 }
 
 module.onunload = () => {
     createdIndices.forEach((index) => index.destroy());
 };
 
-module.exports = { createLoader };
+module.exports = { createLoader, destroyLoader };

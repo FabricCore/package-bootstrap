@@ -1,20 +1,10 @@
 {
+    "extends": "./jsconfig.base.json",
     "compilerOptions": {
-        "checkJs": true,
-        "strict": true,
-        "noEmit": true,
-        "target": "esnext",
-        "module": "preserve",
-        "moduleDetection": "force",
-        "moduleResolution": "bundler",
-        "lib": ["esnext"],
-        "types": [],
         "paths": {
             "/*": ["./*"]
-        },
-        "skipLibCheck": true
+        }
     },
-    "include": ["**/*.js"],
-    "files": ["jscore.d.ts", "dist/java.d.ts"],
-    "exclude": ["dist"]
+    "include": ["bootstrap/**/*.js"],
+    "files": ["jscore.d.ts", "dist/java.d.ts"]
 }
