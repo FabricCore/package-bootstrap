@@ -1,0 +1,12 @@
+{
+    "name": "loader-api",
+    "version": "0.1.0",
+    "description": "Package to interact with the Loader API",
+    "keywords": [
+        "Loader API"
+    ],
+    "license": "ARR",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {}
+}
