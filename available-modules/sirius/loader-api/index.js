@@ -8,8 +8,8 @@ const moduleIndex = module.require("../../../bootstrap/moduleIndex.js", []);
  * toUnload: package id
  *
  * @import {ChangeRequest, Rejection, Accept} from "../../../bootstrap/moduleIndex.js"
- * @param {string} base 
- * @param {boolean} apply 
+ * @param {string} base
+ * @param {boolean} apply
  * @param {Pick<ChangeRequest, "toLoad" | "toReplace" | "toUnload">} changes
  * @returns {Rejection | Accept}
  */
@@ -18,10 +18,10 @@ function propose(base, apply, { toLoad, toReplace, toUnload }) {
         toLoad,
         toReplace,
         toUnload,
-        apply
-    })
+        apply,
+    });
 }
 
 module.exports = {
-    propose
+    propose,
 };

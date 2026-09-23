@@ -23,7 +23,9 @@ const MessageArgument = Java.type("net.minecraft.commands.arguments.MessageArgum
 const NbtPathArgument = Java.type("net.minecraft.commands.arguments.NbtPathArgument");
 const NbtTagArgument = Java.type("net.minecraft.commands.arguments.NbtTagArgument");
 const ObjectiveArgument = Java.type("net.minecraft.commands.arguments.ObjectiveArgument");
-const ObjectiveCriteriaArgument = Java.type("net.minecraft.commands.arguments.ObjectiveCriteriaArgument");
+const ObjectiveCriteriaArgument = Java.type(
+    "net.minecraft.commands.arguments.ObjectiveCriteriaArgument",
+);
 const OperationArgument = Java.type("net.minecraft.commands.arguments.OperationArgument");
 const ParticleArgument = Java.type("net.minecraft.commands.arguments.ParticleArgument");
 const RangeArgument = Java.type("net.minecraft.commands.arguments.RangeArgument");
@@ -31,8 +33,12 @@ const ResourceArgument = Java.type("net.minecraft.commands.arguments.ResourceArg
 const ResourceKeyArgument = Java.type("net.minecraft.commands.arguments.ResourceKeyArgument");
 const ResourceOrIdArgument = Java.type("net.minecraft.commands.arguments.ResourceOrIdArgument");
 const ResourceOrTagArgument = Java.type("net.minecraft.commands.arguments.ResourceOrTagArgument");
-const ResourceOrTagKeyArgument = Java.type("net.minecraft.commands.arguments.ResourceOrTagKeyArgument");
-const ResourceSelectorArgument = Java.type("net.minecraft.commands.arguments.ResourceSelectorArgument");
+const ResourceOrTagKeyArgument = Java.type(
+    "net.minecraft.commands.arguments.ResourceOrTagKeyArgument",
+);
+const ResourceSelectorArgument = Java.type(
+    "net.minecraft.commands.arguments.ResourceSelectorArgument",
+);
 const ScoreHolderArgument = Java.type("net.minecraft.commands.arguments.ScoreHolderArgument");
 const ScoreboardSlotArgument = Java.type("net.minecraft.commands.arguments.ScoreboardSlotArgument");
 const SlotArgument = Java.type("net.minecraft.commands.arguments.SlotArgument");
@@ -41,21 +47,29 @@ const StyleArgument = Java.type("net.minecraft.commands.arguments.StyleArgument"
 const TeamArgument = Java.type("net.minecraft.commands.arguments.TeamArgument");
 const TeamColorArgument = Java.type("net.minecraft.commands.arguments.TeamColorArgument");
 const TemplateMirrorArgument = Java.type("net.minecraft.commands.arguments.TemplateMirrorArgument");
-const TemplateRotationArgument = Java.type("net.minecraft.commands.arguments.TemplateRotationArgument");
+const TemplateRotationArgument = Java.type(
+    "net.minecraft.commands.arguments.TemplateRotationArgument",
+);
 const TimeArgument = Java.type("net.minecraft.commands.arguments.TimeArgument");
 const UuidArgument = Java.type("net.minecraft.commands.arguments.UuidArgument");
 
-const BlockPredicateArgument = Java.type("net.minecraft.commands.arguments.blocks.BlockPredicateArgument");
+const BlockPredicateArgument = Java.type(
+    "net.minecraft.commands.arguments.blocks.BlockPredicateArgument",
+);
 const BlockStateArgument = Java.type("net.minecraft.commands.arguments.blocks.BlockStateArgument");
 const BlockPosArgument = Java.type("net.minecraft.commands.arguments.coordinates.BlockPosArgument");
-const ColumnPosArgument = Java.type("net.minecraft.commands.arguments.coordinates.ColumnPosArgument");
+const ColumnPosArgument = Java.type(
+    "net.minecraft.commands.arguments.coordinates.ColumnPosArgument",
+);
 const RotationArgument = Java.type("net.minecraft.commands.arguments.coordinates.RotationArgument");
 const SwizzleArgument = Java.type("net.minecraft.commands.arguments.coordinates.SwizzleArgument");
 const Vec2Argument = Java.type("net.minecraft.commands.arguments.coordinates.Vec2Argument");
 const Vec3Argument = Java.type("net.minecraft.commands.arguments.coordinates.Vec3Argument");
 const FunctionArgument = Java.type("net.minecraft.commands.arguments.item.FunctionArgument");
 const ItemArgument = Java.type("net.minecraft.commands.arguments.item.ItemArgument");
-const ItemPredicateArgument = Java.type("net.minecraft.commands.arguments.item.ItemPredicateArgument");
+const ItemPredicateArgument = Java.type(
+    "net.minecraft.commands.arguments.item.ItemPredicateArgument",
+);
 
 const Identifier = Java.type("net.minecraft.resources.Identifier");
 const ResourceKey = Java.type("net.minecraft.resources.ResourceKey");
@@ -106,7 +120,7 @@ function ranged(factory, { min, max }) {
  */
 function registryKey(registry) {
     if (registry === undefined)
-        throw new Error("this argument type needs options.registry, e.g. \"minecraft:item\"");
+        throw new Error('this argument type needs options.registry, e.g. "minecraft:item"');
 
     return ResourceKey.createRegistryKey(Identifier.parse(registry));
 }
@@ -210,47 +224,65 @@ const ARGUMENT_TYPES = {
         ResourceOrIdArgument.lootPredicate(ctx),
     dialog: (/** @type {ArgumentOptions} */ _o, /** @type {CommandBuildContext} */ ctx) =>
         ResourceOrIdArgument.dialog(ctx),
-    resource: (/** @type {ArgumentOptions} */ { registry }, /** @type {CommandBuildContext} */ ctx) =>
-        ResourceArgument.resource(ctx, registryKey(registry)),
-    resourceOrTag: (/** @type {ArgumentOptions} */ { registry }, /** @type {CommandBuildContext} */ ctx) =>
-        ResourceOrTagArgument.resourceOrTag(ctx, registryKey(registry)),
-    resourceSelector: (/** @type {ArgumentOptions} */ { registry }, /** @type {CommandBuildContext} */ ctx) =>
-        ResourceSelectorArgument.resourceSelector(ctx, registryKey(registry))
+    resource: (
+        /** @type {ArgumentOptions} */ { registry },
+        /** @type {CommandBuildContext} */ ctx,
+    ) => ResourceArgument.resource(ctx, registryKey(registry)),
+    resourceOrTag: (
+        /** @type {ArgumentOptions} */ { registry },
+        /** @type {CommandBuildContext} */ ctx,
+    ) => ResourceOrTagArgument.resourceOrTag(ctx, registryKey(registry)),
+    resourceSelector: (
+        /** @type {ArgumentOptions} */ { registry },
+        /** @type {CommandBuildContext} */ ctx,
+    ) => ResourceSelectorArgument.resourceSelector(ctx, registryKey(registry)),
 };
 
 /** @typedef {keyof typeof ARGUMENT_TYPES} ArgumentTypeId */
 
 /** The subset of ARGUMENT_TYPES that cannot be built without a CommandBuildContext. */
 const NEEDS_CONTEXT = new Set([
-    "component", "style", "particle", "blockState", "blockPredicate", "item", "itemPredicate",
-    "lootTable", "lootModifier", "lootPredicate", "dialog", "resource", "resourceOrTag",
-    "resourceSelector"
+    "component",
+    "style",
+    "particle",
+    "blockState",
+    "blockPredicate",
+    "item",
+    "itemPredicate",
+    "lootTable",
+    "lootModifier",
+    "lootPredicate",
+    "dialog",
+    "resource",
+    "resourceOrTag",
+    "resourceSelector",
 ]);
 
 /**
- * @param {string} value 
+ * @param {string} value
  * @returns {LiteralChunk}
  */
 function literal(value) {
     return {
         type: "literal",
-        value
+        value,
     };
 }
 
 /**
- * @param {string} label 
- * @param {ArgumentTypeId} kind 
+ * @param {string} label
+ * @param {ArgumentTypeId} kind
  * @param {ArgumentOptions} [options]
  * @returns {ArgumentChunk}
  */
 function arg(label, kind, options = {}) {
     // Collapsed to one signature up front: calling straight off the table makes the
     // checker intersect every entry's signature, which blows its instantiation depth.
-    const factory = /** @type {ArgumentTypeBuilder} */ (/** @type {unknown} */ (ARGUMENT_TYPES[kind]));
+    const factory = /** @type {ArgumentTypeBuilder} */ (
+        /** @type {unknown} */ (ARGUMENT_TYPES[kind])
+    );
 
-    if (factory === undefined)
-        throw new Error(`no such argument type "${kind}"`);
+    if (factory === undefined) throw new Error(`no such argument type "${kind}"`);
 
     return {
         type: "argument",
@@ -261,12 +293,12 @@ function arg(label, kind, options = {}) {
                 throw new Error(`argument type "${kind}" needs a CommandBuildContext`);
 
             return factory(options, ctx);
-        }
-    }
+        },
+    };
 }
 
 /**
- * @param {Chunk} chunk 
+ * @param {Chunk} chunk
  * @returns {string}
  */
 function chunkToString(chunk) {
@@ -274,7 +306,7 @@ function chunkToString(chunk) {
         case "literal":
             return chunk.value;
         case "argument":
-            return `<${chunk.value}:${chunk.argumentTypeId}>`
+            return `<${chunk.value}:${chunk.argumentTypeId}>`;
     }
 }
 
