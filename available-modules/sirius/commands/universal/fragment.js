@@ -4,39 +4,58 @@ const { chunksToString } = require("./chunk.js");
  */
 
 /**
- * @template {any[]} Args
- * @callback IntFunction
- * @param {...Args} args
+ * @template S
+ * @typedef {import("/types/full/com/mojang/brigadier/context/CommandContext").CommandContext<S>} Context
+ */
+
+/**
+ */
+
+/**
+ * @template Source
+ * @callback ExecutionHandler
+ * @param {Context<Source>} ctx
+ * @param {...any} args
  * @returns {number}
  */
 
 /**
+ * @template Source
  * @typedef {{
  *   chunk: LiteralChunk,
- *   handler?: IntFunction<any>,
- *   children: Set<Fragment>
+ *   executes?: ExecutionHandler<Source>,
+ *   children: Set<Fragment<Source>>
  * }} LiteralFragment
+ */
+
+/**
+ * @template Source
  * @typedef {{
  *   chunk: ArgumentChunk,
- *   handler?: IntFunction<any>,
- *   children: Set<Fragment>
+ *   executes?: ExecutionHandler<Source>,
+ *   children: Set<Fragment<Source>>
  * }} ArgumentFragment
+ */
+
+/**
+ * @template Source
  * @typedef {{
  *   chunk: Chunk,
- *   handler?: IntFunction<any>,
- *   children: Set<Fragment>
+ *   executes?: ExecutionHandler<Source>,
+ *   children: Set<Fragment<Source>>
  * }} Fragment
  */
 
 /**
  * on collision, throws error
  *
- * @param {Fragment[]} fragments
+ * @template Source
+ * @param {Fragment<Source>[]} fragments
  * @param {Chunk[]} path
- * @returns {Set<Fragment>}
+ * @returns {Set<Fragment<Source>>}
  */
 function mergeFragments(fragments, path) {
-    /** @type {Map<Chunk["type"], Map<string, Fragment[]>>} */
+    /** @type {Map<Chunk["type"], Map<string, Fragment<Source>[]>>} */
     let fragmentMap = new Map();
 
     fragments.forEach((fragment) =>
@@ -54,7 +73,7 @@ function mergeFragments(fragments, path) {
                 typedFragmentMap.entries().map(([value, fragments]) => {
                     const currentPath = [...path, fragments[0].chunk];
 
-                    if (fragments.filter((fragment) => fragment.handler).length > 1)
+                    if (fragments.filter((fragment) => fragment.executes).length > 1)
                         throw new Error(
                             `Multiple fragments provide handler function for /${chunksToString(currentPath)}`,
                         );
@@ -74,10 +93,10 @@ function mergeFragments(fragments, path) {
                         });
                     }
 
-                    /** @type {Fragment} */
+                    /** @type {Fragment<Source>} */
                     const mergedFragment = {
                         chunk: fragments[0].chunk,
-                        handler: fragments.find((fragment) => fragment.handler)?.handler,
+                        executes: fragments.find((fragment) => fragment.executes)?.executes,
                         children: mergeFragments(
                             fragments.flatMap((fragment) => Array.from(fragment.children)),
                             currentPath,
@@ -96,22 +115,24 @@ function mergeFragments(fragments, path) {
 }
 
 /**
- * @template {any[]} Args
+ * @template Source
  * @param {Chunk[]} chunks
- * @param {IntFunction<Args>} handler
- * @param {Fragment[]} [children=[]]
- * @returns {Fragment}
+ * @param {{
+ *   executes: ExecutionHandler<Source>
+ * }} handlers
+ * @param {Fragment<Source>[]} [children=[]]
+ * @returns {Fragment<Source>}
  */
-function fragment(chunks, handler, children = []) {
+function fragment(chunks, handlers, children = []) {
     if (chunks.length === 0) throw new Error("fragment should supply at least 1 chunk, got 0");
 
     return {
         chunk: chunks[0],
-        handler: chunks.length === 1 ? handler : undefined,
+        executes: chunks.length === 1 ? handlers.executes : undefined,
         children:
             chunks.length === 1
                 ? new Set(children)
-                : new Set([fragment(chunks.slice(1), handler, children)]),
+                : new Set([fragment(chunks.slice(1), handlers, children)]),
     };
 }
 

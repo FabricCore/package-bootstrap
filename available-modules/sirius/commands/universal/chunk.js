@@ -1,5 +1,5 @@
-/** @typedef {import("/dist/full/com/mojang/brigadier/arguments/ArgumentType").ArgumentType<any>} ArgumentType */
-/** @typedef {import("/dist/full/net/minecraft/commands/CommandBuildContext").CommandBuildContext} CommandBuildContext */
+/** @typedef {import("/types/full/com/mojang/brigadier/arguments/ArgumentType").ArgumentType<any>} ArgumentType */
+/** @typedef {import("/types/full/net/minecraft/commands/CommandBuildContext").CommandBuildContext} CommandBuildContext */
 
 const BoolArgumentType = Java.type("com.mojang.brigadier.arguments.BoolArgumentType");
 const DoubleArgumentType = Java.type("com.mojang.brigadier.arguments.DoubleArgumentType");

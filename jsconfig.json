@@ -6,5 +6,5 @@
         }
     },
     "include": ["bootstrap/**/*.js"],
-    "files": ["jscore.d.ts", "dist/java.d.ts"]
+    "files": ["jscore.d.ts", "types/java.d.ts"]
 }

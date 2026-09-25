@@ -5,7 +5,7 @@ config that looks like
 
 ```jsonc
 {
-  "out": "../scripts/dist",
+  "out": "../scripts/types",
   "sources": [
     {
       "jar": "~/.gradle/caches/.../minecraft-merged.jar",

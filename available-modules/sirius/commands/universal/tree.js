@@ -3,13 +3,16 @@
  */
 const { chunkToString } = require("./chunk.js");
 
-/** @type {Map<string, LiteralFragment>} */
+/**
+ * @template Source
+ * @type {Map<string, LiteralFragment<Source>>}
+ */
 const instance = new Map();
 
 /**
  * note: requires the first chunk of the fragment be a literal
  *
- * @param {LiteralFragment} fragment
+ * @param {LiteralFragment<Source>} fragment
  * @returns {void}
  */
 function register(fragment) {

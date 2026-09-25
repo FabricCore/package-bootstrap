@@ -1,6 +1,6 @@
 /** @type {typeof import("../../../bootstrap/moduleIndex.js")} */
 /// @ts-expect-error
-const moduleIndex = module.require("../../../bootstrap/moduleIndex.js", []);
+const moduleIndex = module.import("../../../bootstrap/moduleIndex.js", []);
 
 /**
  * toLoad: package path

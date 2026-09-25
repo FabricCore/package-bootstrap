@@ -14,6 +14,16 @@ const { require } = module.import("./prelude.js", []);
 let createdIndices = new Map();
 
 /**
+ * @param {any} e
+ */
+function printError(e) {
+    if (typeof e === "object" && e !== null && "stack" in e)
+        console.log(e.stack.toString().split("\n").filter(e => !e.startsWith(" ") || e.trim().startsWith("at <js>")).join("\n"));
+    else
+        console.log(e);
+}
+
+/**
  * @typedef {import("./moduleIndex.js")} ModuleIndex
  * @param {string} base
  * @returns {ModuleIndex}
@@ -29,7 +39,7 @@ function createLoader(base) {
                 const exports = module.import(mainPath, [require, ...preludes]);
                 return exports;
             } catch (e) {
-                console.log(e);
+                printError(e)
                 // TODO: load errors
             }
         },
@@ -38,7 +48,7 @@ function createLoader(base) {
                 const mainPath = pathJoin(manifest.getRoot(base), manifest.main);
                 module.unimport(mainPath);
             } catch (e) {
-                console.log(e);
+                printError(e)
                 // TODO: load errors
             }
         },
