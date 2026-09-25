@@ -5,7 +5,7 @@
 
 const LiteralArgumentBuilder = Java.type("com.mojang.brigadier.builder.LiteralArgumentBuilder");
 const RequiredArgumentBuilder = Java.type("com.mojang.brigadier.builder.RequiredArgumentBuilder");
-const Object = Java.type("java.lang.Object");
+const JavaObject = Java.type("java.lang.Object");
 
 /**
  * @template Source
@@ -28,7 +28,7 @@ const Object = Java.type("java.lang.Object");
  */
 function finishBuilder(builder, { executes, children }, buildContext, argumentNames) {
     if (executes !== undefined)
-        builder.executes((ctx) => executes(ctx, ...argumentNames.map(name => ctx.getArgument(name, Object.class))));
+        builder.executes((ctx) => executes(ctx, ...argumentNames.map(name => ctx.getArgument(name, JavaObject.class))));
 
     children.forEach(child => buildCommand(child, buildContext, argumentNames));
 }
