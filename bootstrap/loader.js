@@ -18,7 +18,7 @@ let createdIndices = new Map();
  */
 function printError(e) {
     if (typeof e === "object" && e !== null && "stack" in e)
-        console.log(e.stack.toString().split("\n").filter(e => !e.startsWith(" ") || e.trim().startsWith("at <js>")).join("\n"));
+        console.log(e.stack.toString());
     else
         console.log(e);
 }
