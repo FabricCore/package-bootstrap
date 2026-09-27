@@ -109,8 +109,8 @@ const ResourceKey = Java.type("net.minecraft.resources.ResourceKey");
  * @returns {T}
  */
 function ranged(factory, { min, max }) {
-    if (min === undefined) return factory();
-    if (max === undefined) return factory(min);
+    if (min == undefined) return factory();
+    if (max == undefined) return factory(min);
     return factory(min, max);
 }
 
@@ -119,7 +119,7 @@ function ranged(factory, { min, max }) {
  * @returns {any} ResourceKey<? extends Registry<?>>
  */
 function registryKey(registry) {
-    if (registry === undefined)
+    if (registry == undefined)
         throw new Error('this argument type needs options.registry, e.g. "minecraft:item"');
 
     return ResourceKey.createRegistryKey(Identifier.parse(registry));
@@ -148,9 +148,9 @@ const ARGUMENT_TYPES = {
     rotation: () => RotationArgument.rotation(),
     swizzle: () => SwizzleArgument.swizzle(),
     vec2: (/** @type {ArgumentOptions} */ { centerCorrect }) =>
-        centerCorrect === undefined ? Vec2Argument.vec2() : Vec2Argument.vec2(centerCorrect),
+        centerCorrect == undefined ? Vec2Argument.vec2() : Vec2Argument.vec2(centerCorrect),
     vec3: (/** @type {ArgumentOptions} */ { centerCorrect }) =>
-        centerCorrect === undefined ? Vec3Argument.vec3() : Vec3Argument.vec3(centerCorrect),
+        centerCorrect == undefined ? Vec3Argument.vec3() : Vec3Argument.vec3(centerCorrect),
 
     // entities and players
     entity: () => EntityArgument.entity(),
@@ -189,7 +189,7 @@ const ARGUMENT_TYPES = {
     templateMirror: () => TemplateMirrorArgument.templateMirror(),
     templateRotation: () => TemplateRotationArgument.templateRotation(),
     time: (/** @type {ArgumentOptions} */ { min }) =>
-        min === undefined ? TimeArgument.time() : TimeArgument.time(min),
+        min == undefined ? TimeArgument.time() : TimeArgument.time(min),
     uuid: () => UuidArgument.uuid(),
     function: () => FunctionArgument.functions(),
     intRange: () => RangeArgument.intRange(),
@@ -282,14 +282,14 @@ function arg(label, kind, options = {}) {
         /** @type {unknown} */ (ARGUMENT_TYPES[kind])
     );
 
-    if (factory === undefined) throw new Error(`no such argument type "${kind}"`);
+    if (factory == undefined) throw new Error(`no such argument type "${kind}"`);
 
     return {
         type: "argument",
         value: label,
         argumentTypeId: kind,
         argumentType: (ctx) => {
-            if ((ctx === undefined || ctx === null) && NEEDS_CONTEXT.has(kind))
+            if ((ctx == undefined || ctx === null) && NEEDS_CONTEXT.has(kind))
                 throw new Error(`argument type "${kind}" needs a CommandBuildContext`);
 
             return factory(options, ctx);

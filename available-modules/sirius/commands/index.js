@@ -17,11 +17,11 @@ const { executes, child } = require("./universal/helpers.js");
 
 /**
  * @template Source
- * @param {Chunk[]} chunks
+ * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @returns {RegisteredCommand}
  */
-function register(chunks, ...additionalMetadata) {
+function newCommand(chunks, ...additionalMetadata) {
     const createdFragment = fragment(chunks, additionalMetadata);
     if (createdFragment.chunk.type !== "literal") throw new Error();
 
@@ -32,8 +32,16 @@ function register(chunks, ...additionalMetadata) {
     return registerClientCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
 }
 
+newCommand(
+    ["hello", arg("one", "word")],
+    executes((context, /** @type {string} */ one) => {
+        console.log(`hello ${one}`);
+        return 1;
+    }),
+);
+
 module.exports = {
-    register,
+    newCommand,
     arg,
     literal,
     executes,

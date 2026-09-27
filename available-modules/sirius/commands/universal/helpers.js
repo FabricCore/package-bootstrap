@@ -1,7 +1,6 @@
 /**
  * @import {
  *   ExecutionHandler,
- *   Fragment,
  *   MetaExecutes,
  *   MetaChild,
  *   Meta,
@@ -25,7 +24,7 @@ function executes(handler) {
 
 /**
  * @template Source
- * @param {Chunk[]} chunks
+ * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @return {MetaChild<Source>}
  */

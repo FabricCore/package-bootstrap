@@ -1,5 +1,7 @@
 {
-    "replLanguagePriorities": ["js"],
-    "clientEntryPoint": "client/index.js",
-    "serverEntryPoint": "server/index.js"
+  "replLanguagePriorities": [
+    "js"
+  ],
+  "clientEntryPoint": "client/index.js",
+  "serverEntryPoint": "server/index.js"
 }

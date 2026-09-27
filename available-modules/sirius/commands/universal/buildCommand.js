@@ -28,7 +28,7 @@ const CommandExt = Java.extend(Command);
  * @returns {void}
  */
 function finishBuilder(builder, { executes, children }, buildContext, argumentNames) {
-    if (executes !== undefined)
+    if (executes !== null)
         builder.executes((ctx) =>
             executes(ctx, ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class))),
         );

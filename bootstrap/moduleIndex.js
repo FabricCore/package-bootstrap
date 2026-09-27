@@ -304,7 +304,7 @@ class ModuleIndex {
         // ================= validate nondisjoint ======================
         const toLoadSet = new Set(toLoadManifests.map((manifest) => manifest.manifest.id));
         const toReplaceSet = new Set(toReplaceManifests.map((manifest) => manifest.manifest.id));
-        const toUnloadSet = new Set(toUnload);
+        const toUnloadSet = new Set(toUnload ?? []);
 
         const loadReplaceInter = toLoadSet.intersection(toReplaceSet);
         const unloadReplaceInter = toUnloadSet.intersection(toReplaceSet);

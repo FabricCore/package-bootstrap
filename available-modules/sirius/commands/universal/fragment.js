@@ -1,4 +1,4 @@
-const { chunksToString } = require("./chunk.js");
+const { chunksToString, literal } = require("./chunk.js");
 /**
  * @import {Chunk, LiteralChunk, ArgumentChunk} from "./chunk.js"
  */
@@ -23,7 +23,7 @@ const { chunksToString } = require("./chunk.js");
  * @template Source
  * @typedef {{
  *   chunk: LiteralChunk,
- *   executes?: ExecutionHandler<Source>,
+ *   executes: ExecutionHandler<Source> | null,
  *   children: Set<Fragment<Source>>
  * }} LiteralFragment
  */
@@ -32,7 +32,7 @@ const { chunksToString } = require("./chunk.js");
  * @template Source
  * @typedef {{
  *   chunk: ArgumentChunk,
- *   executes?: ExecutionHandler<Source>,
+ *   executes: ExecutionHandler<Source> | null,
  *   children: Set<Fragment<Source>>
  * }} ArgumentFragment
  */
@@ -41,7 +41,7 @@ const { chunksToString } = require("./chunk.js");
  * @template Source
  * @typedef {{
  *   chunk: Chunk,
- *   executes?: ExecutionHandler<Source>,
+ *   executes: ExecutionHandler<Source> | null,
  *   children: Set<Fragment<Source>>
  * }} Fragment
  */
@@ -117,7 +117,7 @@ function mergeFragments(fragments, path) {
                     /** @type {Fragment<Source>} */
                     const mergedFragment = {
                         chunk: fragments[0].chunk,
-                        executes: fragments.find((fragment) => fragment.executes)?.executes,
+                        executes: fragments.find((fragment) => fragment.executes)?.executes ?? null,
                         children: mergeFragments(
                             fragments.flatMap((fragment) => Array.from(fragment.children)),
                             currentPath,
@@ -137,26 +137,29 @@ function mergeFragments(fragments, path) {
 
 /**
  * @template Source
- * @param {Chunk[]} chunks
+ * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {Meta<Source>[]} [additionalMetadata=[]]
  * @returns {Fragment<Source>}
  */
 function fragment(chunks, additionalMetadata = []) {
+    if (!Array.isArray(chunks))
+        chunks = [chunks];
+
     if (chunks.length === 0) throw new Error("fragment should supply at least 1 chunk, got 0");
 
     return {
-        chunk: chunks[0],
+        chunk: typeof chunks[0] === "string" ? literal(chunks[0]) : chunks[0],
         executes:
             chunks.length === 1
-                ? additionalMetadata.find((meta) => meta.type === "executes")?.value
-                : undefined,
+                ? additionalMetadata.find((meta) => meta.type === "executes")?.value ?? null
+                : null,
         children:
             chunks.length === 1
                 ? new Set(
-                      additionalMetadata
-                          .filter((meta) => meta.type === "child")
-                          .map((meta) => meta.value),
-                  )
+                    additionalMetadata
+                        .filter((meta) => meta.type === "child")
+                        .map((meta) => meta.value),
+                )
                 : new Set([fragment(chunks.slice(1), additionalMetadata)]),
     };
 }
