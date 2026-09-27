@@ -55,7 +55,6 @@ config:
 ---
 
 flowchart LR
-prelude.js --> files.js
 client/index.js --> loader.js
 loader.js --> client/*
 loader.js --> files.js
@@ -65,6 +64,8 @@ client/* --> api.js
 api.js --> moduleIndex.js
 moduleIndex.js --> files.js
 moduleIndex.js --> manifest.js
+prelude.js --> files.js
+prelude.js --> moduleIndex.js
 manifest.js --> semver.js
 manifest.js --> files.js
 moduleIndex.js --> dag.js
