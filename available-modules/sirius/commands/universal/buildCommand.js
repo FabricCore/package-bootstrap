@@ -33,7 +33,7 @@ function finishBuilder(builder, { executes, children }, buildContext, argumentNa
             executes(ctx, ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class))),
         );
 
-    children.forEach((child) => buildCommand(child, buildContext, argumentNames));
+    children.forEach((child) => builder.then(buildCommand(child, buildContext, argumentNames)));
 }
 
 /**

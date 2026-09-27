@@ -142,8 +142,7 @@ function mergeFragments(fragments, path) {
  * @returns {Fragment<Source>}
  */
 function fragment(chunks, additionalMetadata = []) {
-    if (!Array.isArray(chunks))
-        chunks = [chunks];
+    if (!Array.isArray(chunks)) chunks = [chunks];
 
     if (chunks.length === 0) throw new Error("fragment should supply at least 1 chunk, got 0");
 
@@ -151,15 +150,15 @@ function fragment(chunks, additionalMetadata = []) {
         chunk: typeof chunks[0] === "string" ? literal(chunks[0]) : chunks[0],
         executes:
             chunks.length === 1
-                ? additionalMetadata.find((meta) => meta.type === "executes")?.value ?? null
+                ? (additionalMetadata.find((meta) => meta.type === "executes")?.value ?? null)
                 : null,
         children:
             chunks.length === 1
                 ? new Set(
-                    additionalMetadata
-                        .filter((meta) => meta.type === "child")
-                        .map((meta) => meta.value),
-                )
+                      additionalMetadata
+                          .filter((meta) => meta.type === "child")
+                          .map((meta) => meta.value),
+                  )
                 : new Set([fragment(chunks.slice(1), additionalMetadata)]),
     };
 }

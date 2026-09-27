@@ -275,7 +275,10 @@ function literal(value) {
  * @param {ArgumentOptions} [options]
  * @returns {ArgumentChunk}
  */
-function arg(label, kind, options = {}) {
+function arg(label, kind, options) {
+    // a default parameter only kicks in for this context's undefined, not one passed in from another module
+    const resolvedOptions = options ?? {};
+
     // Collapsed to one signature up front: calling straight off the table makes the
     // checker intersect every entry's signature, which blows its instantiation depth.
     const factory = /** @type {ArgumentTypeBuilder} */ (
@@ -289,10 +292,10 @@ function arg(label, kind, options = {}) {
         value: label,
         argumentTypeId: kind,
         argumentType: (ctx) => {
-            if ((ctx == undefined || ctx === null) && NEEDS_CONTEXT.has(kind))
+            if (ctx == undefined && NEEDS_CONTEXT.has(kind))
                 throw new Error(`argument type "${kind}" needs a CommandBuildContext`);
 
-            return factory(options, ctx);
+            return factory(resolvedOptions, ctx);
         },
     };
 }

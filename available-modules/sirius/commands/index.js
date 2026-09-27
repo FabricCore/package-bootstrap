@@ -32,14 +32,6 @@ function newCommand(chunks, ...additionalMetadata) {
     return registerClientCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
 }
 
-newCommand(
-    ["hello", arg("one", "word")],
-    executes((context, /** @type {string} */ one) => {
-        console.log(`hello ${one}`);
-        return 1;
-    }),
-);
-
 module.exports = {
     newCommand,
     arg,
