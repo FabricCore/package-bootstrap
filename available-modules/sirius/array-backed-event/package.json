@@ -1,0 +1,10 @@
+{
+    "name": "array-backed-event",
+    "version": "0.1.0",
+    "description": "Package for maniputating array-backed-event",
+    "keywords": [],
+    "license": "ARR",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {}
+}

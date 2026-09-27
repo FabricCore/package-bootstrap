@@ -40,6 +40,8 @@ function register(chunks, ...additionalMetadata) {
     return registerClientCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
 }
 
+console.log("got here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
 register(
     [literal("hello")],
     executes(() => { return 1; })
