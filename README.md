@@ -1,3 +1,38 @@
+## Bootstrap dependency graph
+
+```mermaid
+---
+config:
+---
+
+flowchart LR
+client/index.js --> loader.js
+loader.js --> client/*
+loader.js --> files.js
+loader.js --> prelude.js
+loader.js --> moduleIndex.js
+client/* --> api.js
+api.js --> moduleIndex.js
+moduleIndex.js --> files.js
+moduleIndex.js --> manifest.js
+prelude.js --> files.js
+prelude.js --> moduleIndex.js
+manifest.js --> semver.js
+manifest.js --> files.js
+moduleIndex.js --> dag.js
+```
+
+## Todo
+
+- [ ] Commands
+  - [ ] Server commands
+  - [ ] Suggestions
+  - [ ] Require gating
+- [ ] Devtools
+  - [ ] Loading/unloading modules from `available-modules` into client or server
+
+---
+
 I will not be including the .d.ts files in this repo because they are huge.
 
 To generate them, run [dtsgen](https://github.com/FabricCore/dtsgen) with
@@ -20,8 +55,8 @@ config that looks like
       "jar": "fabric-api.jar",
     },
     {
-      "jar": "~/.gradle/caches/.../commons-io-2.20.0.jar"
-    }
+      "jar": "~/.gradle/caches/.../commons-io-2.20.0.jar",
+    },
   ],
   "classpathOnly": [],
   "jsdoc": "params",
@@ -45,28 +80,4 @@ config that looks like
     ],
   },
 }
-```
-
-Bootstrap dependency graph
-
-```mermaid
----
-config:
----
-
-flowchart LR
-client/index.js --> loader.js
-loader.js --> client/*
-loader.js --> files.js
-loader.js --> prelude.js
-loader.js --> moduleIndex.js
-client/* --> api.js
-api.js --> moduleIndex.js
-moduleIndex.js --> files.js
-moduleIndex.js --> manifest.js
-prelude.js --> files.js
-prelude.js --> moduleIndex.js
-manifest.js --> semver.js
-manifest.js --> files.js
-moduleIndex.js --> dag.js
 ```
