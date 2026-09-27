@@ -101,6 +101,14 @@ class Manifest {
     getRoot(base) {
         return pathJoin("/", base, this.author, this.name);
     }
+
+    /**
+     * @param {string} base
+     * @returns {string}
+     */
+    getMain(base) {
+        return pathJoin("/", base, this.author, this.name, this.main);
+    }
 }
 
 module.exports = Manifest;

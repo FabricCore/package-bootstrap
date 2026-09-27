@@ -17,10 +17,8 @@ let createdIndices = new Map();
  * @param {any} e
  */
 function printError(e) {
-    if (typeof e === "object" && e !== null && "stack" in e)
-        console.log(e.stack.toString());
-    else
-        console.log(e);
+    if (typeof e === "object" && e !== null && "stack" in e) console.log(e.stack.toString());
+    else console.log(e);
 }
 
 /**
@@ -39,7 +37,7 @@ function createLoader(base) {
                 const exports = module.import(mainPath, [require, ...preludes]);
                 return exports;
             } catch (e) {
-                printError(e)
+                printError(e);
                 // TODO: load errors
             }
         },
@@ -48,7 +46,7 @@ function createLoader(base) {
                 const mainPath = pathJoin(manifest.getRoot(base), manifest.main);
                 module.unimport(mainPath);
             } catch (e) {
-                printError(e)
+                printError(e);
                 // TODO: load errors
             }
         },

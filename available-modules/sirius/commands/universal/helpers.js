@@ -9,18 +9,18 @@
  * @import { Chunk } from "./chunk.js"
  */
 
-const { fragment } = require("./fragment");
+const { fragment } = require("./fragment.js");
 
 /**
  * @template Source
- * @param {ExecutionHandler<Source>} handler 
+ * @param {ExecutionHandler<Source>} handler
  * @return {MetaExecutes<Source>}
  */
 function executes(handler) {
     return {
         type: "executes",
-        value: handler
-    }
+        value: handler,
+    };
 }
 
 /**
@@ -32,8 +32,8 @@ function executes(handler) {
 function child(chunks, ...additionalMetadata) {
     return {
         type: "child",
-        value: fragment(chunks, additionalMetadata)
-    }
+        value: fragment(chunks, additionalMetadata),
+    };
 }
 
-module.exports = { child, executes }
+module.exports = { child, executes };

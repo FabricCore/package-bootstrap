@@ -146,10 +146,17 @@ function fragment(chunks, additionalMetadata = []) {
 
     return {
         chunk: chunks[0],
-        executes: chunks.length === 1 ? additionalMetadata.find(meta => meta.type === "executes")?.value : undefined,
+        executes:
+            chunks.length === 1
+                ? additionalMetadata.find((meta) => meta.type === "executes")?.value
+                : undefined,
         children:
             chunks.length === 1
-                ? new Set(additionalMetadata.filter(meta => meta.type === "child").map(meta => meta.value))
+                ? new Set(
+                      additionalMetadata
+                          .filter((meta) => meta.type === "child")
+                          .map((meta) => meta.value),
+                  )
                 : new Set([fragment(chunks.slice(1), additionalMetadata)]),
     };
 }

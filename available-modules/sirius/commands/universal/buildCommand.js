@@ -6,6 +6,8 @@
 const LiteralArgumentBuilder = Java.type("com.mojang.brigadier.builder.LiteralArgumentBuilder");
 const RequiredArgumentBuilder = Java.type("com.mojang.brigadier.builder.RequiredArgumentBuilder");
 const JavaObject = Java.type("java.lang.Object");
+const Command = Java.type("com.mojang.brigadier.Command");
+const CommandExt = Java.extend(Command);
 
 /**
  * @template Source
@@ -17,26 +19,33 @@ const JavaObject = Java.type("java.lang.Object");
  * @typedef {import("/types/full/com/mojang/brigadier/builder/RequiredArgumentBuilder.js").RequiredArgumentBuilder<Source, any>} RequiredArgumentBuilder
  */
 
-
 /**
  * @template Source
- * @param {LiteralArgumentBuilder<Source> | RequiredArgumentBuilder<Source>} builder 
- * @param {Fragment<Source>} fragment 
- * @param {CommandBuildContext} buildContext 
+ * @param {LiteralArgumentBuilder<Source> | RequiredArgumentBuilder<Source>} builder
+ * @param {Fragment<Source>} fragment
+ * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
  * @returns {void}
  */
 function finishBuilder(builder, { executes, children }, buildContext, argumentNames) {
     if (executes !== undefined)
-        builder.executes((ctx) => executes(ctx, ...argumentNames.map(name => ctx.getArgument(name, JavaObject.class))));
+        builder.executes(
+            new CommandExt({
+                run: (ctx) =>
+                    executes(
+                        ctx,
+                        ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class)),
+                    ),
+            }),
+        );
 
-    children.forEach(child => buildCommand(child, buildContext, argumentNames));
+    children.forEach((child) => buildCommand(child, buildContext, argumentNames));
 }
 
 /**
  * @template Source
- * @param {Fragment<Source>} fragment 
- * @param {CommandBuildContext} buildContext 
+ * @param {Fragment<Source>} fragment
+ * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
  * @returns {LiteralArgumentBuilder<Source> | RequiredArgumentBuilder<Source>}
  */
@@ -59,8 +68,8 @@ function buildCommand(fragment, buildContext, argumentNames = []) {
 
 /**
  * @template Source
- * @param {LiteralFragment<Source>} fragment 
- * @param {CommandBuildContext} buildContext 
+ * @param {LiteralFragment<Source>} fragment
+ * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
  * @returns {LiteralArgumentBuilder<Source>}
  */
@@ -72,14 +81,17 @@ function buildLiteral(fragment, buildContext, argumentNames = []) {
 
 /**
  * @template Source
- * @param {ArgumentFragment<Source>} fragment 
- * @param {CommandBuildContext} buildContext 
+ * @param {ArgumentFragment<Source>} fragment
+ * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
  * @returns {RequiredArgumentBuilder<Source>}
  */
 function buildArgument(fragment, buildContext, argumentNames = []) {
     argumentNames = argumentNames.concat([fragment.chunk.value]);
-    const builder = RequiredArgumentBuilder.argument(fragment.chunk.value, fragment.chunk.argumentType(buildContext));
+    const builder = RequiredArgumentBuilder.argument(
+        fragment.chunk.value,
+        fragment.chunk.argumentType(buildContext),
+    );
     finishBuilder(builder, fragment, buildContext, argumentNames);
     return builder;
 }

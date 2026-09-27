@@ -5,8 +5,11 @@
 /** @import { LiteralFragment } from "../universal/fragment.js" */
 
 const ClientCommands = Java.type("net.fabricmc.fabric.api.client.command.v2.ClientCommands");
-const ClientCommandRegistrationCallback = Java.type("net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback");
-const CommandNode = Java.type("com.mojang.brigadier.tree.CommandNode")
+const ClientCommandRegistrationCallback = Java.type(
+    "net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback",
+);
+const ClientCommandRegistrationCallbackExt = Java.extend(ClientCommandRegistrationCallback);
+const CommandNode = Java.type("com.mojang.brigadier.tree.CommandNode");
 const { registerListener } = require("sirius/array-backed-event");
 
 const { getCommands } = require("../universal/tree.js");
@@ -17,8 +20,8 @@ let buildContextCache = null;
 
 class RegisteredClientCommand {
     /**
-     * @param {string} name 
-     * @param {() => void} onunregister 
+     * @param {string} name
+     * @param {() => void} onunregister
      */
     constructor(name, onunregister) {
         /** @type {string} */
@@ -30,14 +33,12 @@ class RegisteredClientCommand {
     }
 
     unregister() {
-        if(this.hasUnregistered)
-            return;
+        if (this.hasUnregistered) return;
 
         this.hasUnregistered = true;
 
         const dispatcher = ClientCommands.getActiveDispatcher();
-        if (dispatcher === null)
-            return;
+        if (dispatcher === null) return;
 
         const root = dispatcher.getRoot();
 
@@ -54,13 +55,14 @@ class RegisteredClientCommand {
 
 /**
  * @param {LiteralFragment<FabricClientCommandSource>} fragment
- * @param {() => void} onunregister 
+ * @param {() => void} onunregister
  * @returns {RegisteredClientCommand} used for removing the registered command
  */
 function registerClientCommand(fragment, onunregister) {
     const dispatcher = ClientCommands.getActiveDispatcher();
     const buildContext = buildContextCache;
-    if (dispatcher !== null && buildContext !== null) { // is in a world
+    if (dispatcher !== null && buildContext !== null) {
+        // is in a world
         dispatcher.register(buildLiteral(fragment, buildContext));
         ClientCommands.refreshCommandCompletions();
     }
@@ -70,21 +72,24 @@ function registerClientCommand(fragment, onunregister) {
 
 const handle = registerListener(
     ClientCommandRegistrationCallback.EVENT,
-    (dispatcher, commandBuildContext) => {
-        /** @type {CommandBuildContext} */
-        /// @ts-expect-error -- CommandBuildContext inherits a call signature from HolderGetter.Provider, so the generated JavaFn<CommandBuildContext> widens to a union with a function type; it is always a real CommandBuildContext at runtime here.
-        const buildContext = commandBuildContext;
-        buildContextCache = buildContext;
+    new ClientCommandRegistrationCallbackExt({
+        register: (dispatcher, commandBuildContext) => {
+            /** @type {CommandBuildContext} */
+            /// @ts-expect-error -- CommandBuildContext inherits a call signature from HolderGetter.Provider, so the generated JavaFn<CommandBuildContext> widens to a union with a function type; it is always a real CommandBuildContext at runtime here.
+            const buildContext = commandBuildContext;
+            buildContextCache = buildContext;
 
-        getCommands()
-            .forEach((fragment) => dispatcher.register(buildLiteral(fragment, buildContext)));
-    }
+            getCommands().forEach((fragment) =>
+                dispatcher.register(buildLiteral(fragment, buildContext)),
+            );
+        },
+    }),
 );
 
 module.onunload = () => {
     handle.unregister();
-}
+};
 
 module.exports = {
-    registerClientCommand
-}
+    registerClientCommand,
+};

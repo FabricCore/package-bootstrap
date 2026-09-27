@@ -8,5 +8,7 @@
     "license": "ARR",
     "author": "sirius",
     "main": "index.js",
-    "dependencies": {}
+    "dependencies": {
+        "sirius/array-backed-event": "0.1.0"
+    }
 }

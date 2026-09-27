@@ -5,14 +5,7 @@
  */
 
 /**
- * @import {
- *   ExecutionHandler,
- *   Fragment,
- *   MetaExecutes,
- *   MetaChild,
- *   LiteralFragment,
- *   Meta,
- * } from "./universal/fragment.js"
+ * @import { Meta } from "./universal/fragment.js"
  * @import { Chunk } from "./universal/chunk.js"
  */
 
@@ -30,8 +23,7 @@ const { executes, child } = require("./universal/helpers.js");
  */
 function register(chunks, ...additionalMetadata) {
     const createdFragment = fragment(chunks, additionalMetadata);
-    if (createdFragment.chunk.type !== "literal")
-        throw new Error();
+    if (createdFragment.chunk.type !== "literal") throw new Error();
 
     /** @type {any} */
     const createdLiteral = createdFragment;
@@ -40,13 +32,10 @@ function register(chunks, ...additionalMetadata) {
     return registerClientCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
 }
 
-register(
-    [literal("hello")],
-    executes(() => { return 1; })
-)
-
 module.exports = {
     register,
-    arg, literal,
-    executes, child
+    arg,
+    literal,
+    executes,
+    child,
 };

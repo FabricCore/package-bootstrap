@@ -13,7 +13,13 @@ interface JscoreModule {
     ): JscorePrelude;
 }
 type JscoreExports =
-    | { prelude?: JscorePrelude;[key: string]: any }
-    | string | number | boolean | bigint | symbol | null | undefined;
+    | { prelude?: JscorePrelude; [key: string]: any }
+    | string
+    | number
+    | boolean
+    | bigint
+    | symbol
+    | null
+    | undefined;
 
 declare var module: JscoreModule;

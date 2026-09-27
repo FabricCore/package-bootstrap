@@ -31,8 +31,8 @@ function declaredField(cls, name) {
  */
 class Handle {
     /**
-     * @param {Event<T>} event 
-     * @param {JavaFn<T>} listener 
+     * @param {Event<T>} event
+     * @param {JavaFn<T>} listener
      */
     constructor(event, listener) {
         /** @type {Event<T>} */
@@ -92,7 +92,10 @@ function unregisterListener(event, listener) {
     }
     if (!found) throw new Error("listener was not registered");
 
-    const newListeners = JavaArray.newInstance(listeners.getClass().getComponentType(), kept.length);
+    const newListeners = JavaArray.newInstance(
+        listeners.getClass().getComponentType(),
+        kept.length,
+    );
     kept.forEach((keptListener, i) => JavaArray.set(newListeners, i, keptListener));
     listenersField.set(phaseData, newListeners);
 
