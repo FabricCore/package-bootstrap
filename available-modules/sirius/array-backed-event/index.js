@@ -32,12 +32,12 @@ function declaredField(cls, name) {
 class Handle {
     /**
      * @param {Event<T>} event
-     * @param {JavaFn<T>} listener
+     * @param {T} listener
      */
     constructor(event, listener) {
         /** @type {Event<T>} */
         this.event = event;
-        /** @type {JavaFn<T> } */
+        /** @type {T} */
         this.listener = listener;
     }
 
@@ -54,7 +54,7 @@ class Handle {
  *
  * @template T
  * @param {Event<T>} event
- * @param {JavaFn<T>} listener
+ * @param {T} listener
  * @returns {Handle<T>}
  */
 function registerListener(event, listener) {
@@ -65,7 +65,7 @@ function registerListener(event, listener) {
 /**
  * @template T
  * @param {Event<T>} event
- * @param {JavaFn<T>} listener
+ * @param {T} listener
  * @returns {void}
  */
 function unregisterListener(event, listener) {

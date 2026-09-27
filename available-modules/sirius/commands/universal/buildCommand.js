@@ -29,14 +29,8 @@ const CommandExt = Java.extend(Command);
  */
 function finishBuilder(builder, { executes, children }, buildContext, argumentNames) {
     if (executes !== undefined)
-        builder.executes(
-            new CommandExt({
-                run: (ctx) =>
-                    executes(
-                        ctx,
-                        ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class)),
-                    ),
-            }),
+        builder.executes((ctx) =>
+            executes(ctx, ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class))),
         );
 
     children.forEach((child) => buildCommand(child, buildContext, argumentNames));
