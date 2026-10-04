@@ -107,4 +107,4 @@ function unregisterListener(event, listener) {
     rebuildInvoker.invoke(event, JavaInteger.valueOf(newLength));
 }
 
-module.exports = { registerListener };
+module.exports = { registerListener, Handle };

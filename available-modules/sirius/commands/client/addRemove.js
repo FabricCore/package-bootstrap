@@ -40,6 +40,8 @@ class RegisteredClientCommand {
         const dispatcher = ClientCommands.getActiveDispatcher();
         if (dispatcher === null) return;
 
+        this.onunregister();
+
         const root = dispatcher.getRoot();
 
         // children is the actual map

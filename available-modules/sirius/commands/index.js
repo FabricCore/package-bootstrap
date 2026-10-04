@@ -7,9 +7,23 @@
 /**
  * @import { Meta } from "./universal/fragment.js"
  * @import { Chunk } from "./universal/chunk.js"
+ * @import { LiteralFragment } from "./universal/fragment.js";
  */
 
-const { registerClientCommand } = require("./client/addRemove.js");
+/**
+ * @type {(fragment: LiteralFragment<any>, onunregister: () => void) => RegisteredCommand}
+ */
+let registerCommand;
+
+switch ((/** @type {any} */ (module)).path.split("/")[1]) {
+    case "client":
+        registerCommand = require("./client/addRemove.js").registerClientCommand;
+        break;
+    case "server":
+        registerCommand = require("./server/addRemove.js").registerServerCommand;
+        break;
+}
+
 const tree = require("./universal/tree.js");
 const { fragment } = require("./universal/fragment.js");
 const { arg, literal } = require("./universal/chunk.js");
@@ -29,7 +43,7 @@ function newCommand(chunks, ...additionalMetadata) {
     const createdLiteral = createdFragment;
 
     tree.register(createdLiteral);
-    return registerClientCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
+    return registerCommand(createdLiteral, () => tree.unregister(createdLiteral.chunk.value));
 }
 
 module.exports = {
