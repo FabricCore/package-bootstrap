@@ -1,6 +1,8 @@
 const { chunksToString, literal } = require("./chunk.js");
 /**
  * @import {Chunk, LiteralChunk, ArgumentChunk} from "./chunk.js"
+ * @import { CommandSourceStack } from "/types/full/net/minecraft/commands/CommandSourceStack"
+ * @import { FabricClientCommandSource } from "/types/full/net/fabricmc/fabric/api/client/command/v2/FabricClientCommandSource"
  */
 
 /**
@@ -9,10 +11,13 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
+ * every source a command can run with: server-side, or client-side via fabric
+ *
+ * @typedef {CommandSourceStack | FabricClientCommandSource} CommandSource
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @callback ExecutionHandler
  * @param {Context<Source>} ctx
  * @param {...any} args
@@ -20,7 +25,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   chunk: LiteralChunk,
  *   executes: ExecutionHandler<Source> | null,
@@ -30,7 +35,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   chunk: ArgumentChunk,
  *   executes: ExecutionHandler<Source> | null,
@@ -40,7 +45,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   chunk: Chunk,
  *   executes: ExecutionHandler<Source> | null,
@@ -50,7 +55,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   type: "child",
  *   value: Fragment<Source>
@@ -58,7 +63,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   type: "executes",
  *   value: ExecutionHandler<Source>
@@ -66,7 +71,7 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {{
  *   type: "requires",
  *   value: (source: Source) => boolean
@@ -74,14 +79,14 @@ const { chunksToString, literal } = require("./chunk.js");
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {MetaChild<Source> | MetaExecutes<Source> | MetaRequires<Source>} Meta
  */
 
 /**
  * on collision, throws error
  *
- * @template Source
+ * @template {CommandSource} Source
  * @param {Fragment<Source>[]} fragments
  * @param {Chunk[]} path
  * @returns {Set<Fragment<Source>>}
@@ -153,7 +158,7 @@ function mergeFragments(fragments, path) {
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {Meta<Source>[]} [additionalMetadata=[]]
  * @returns {Fragment<Source>}

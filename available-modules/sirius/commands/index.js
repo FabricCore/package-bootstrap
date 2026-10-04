@@ -5,7 +5,7 @@
  */
 
 /**
- * @import { Meta } from "./universal/fragment.js"
+ * @import { Meta, CommandSource } from "./universal/fragment.js"
  * @import { Chunk } from "./universal/chunk.js"
  * @import { LiteralFragment } from "./universal/fragment.js";
  */
@@ -33,7 +33,7 @@ const { arg, literal } = require("./universal/chunk.js");
 const { executes, child, requires } = require("./universal/helpers.js");
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @returns {RegisteredCommand}

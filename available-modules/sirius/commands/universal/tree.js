@@ -1,5 +1,5 @@
 /**
- * @import { LiteralFragment } from "./fragment.js"
+ * @import { LiteralFragment, CommandSource } from "./fragment.js"
  */
 const { chunkToString } = require("./chunk.js");
 
@@ -11,7 +11,7 @@ const instance = new Map();
 /**
  * note: requires the first chunk of the fragment be a literal
  *
- * @template Source
+ * @template {CommandSource} Source
  * @param {LiteralFragment<Source>} fragment
  * @returns {void}
  */

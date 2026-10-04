@@ -1,5 +1,5 @@
 /**
- * @import { Fragment, LiteralFragment, ArgumentFragment } from "./fragment.js"
+ * @import { Fragment, LiteralFragment, ArgumentFragment, CommandSource } from "./fragment.js"
  * @import { CommandBuildContext } from "/types/full/net/minecraft/commands/CommandBuildContext"
  */
 
@@ -8,17 +8,17 @@ const RequiredArgumentBuilder = Java.type("com.mojang.brigadier.builder.Required
 const JavaObject = Java.type("java.lang.Object");
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {import("/types/full/com/mojang/brigadier/builder/LiteralArgumentBuilder").LiteralArgumentBuilder<Source>} LiteralArgumentBuilder
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @typedef {import("/types/full/com/mojang/brigadier/builder/RequiredArgumentBuilder.js").RequiredArgumentBuilder<Source, any>} RequiredArgumentBuilder
  */
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {LiteralArgumentBuilder<Source> | RequiredArgumentBuilder<Source>} builder
  * @param {Fragment<Source>} fragment
  * @param {CommandBuildContext} buildContext
@@ -37,7 +37,7 @@ function finishBuilder(builder, { executes, requires, children }, buildContext, 
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {Fragment<Source>} fragment
  * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
@@ -61,7 +61,7 @@ function buildCommand(fragment, buildContext, argumentNames = []) {
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {LiteralFragment<Source>} fragment
  * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames
@@ -74,7 +74,7 @@ function buildLiteral(fragment, buildContext, argumentNames = []) {
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {ArgumentFragment<Source>} fragment
  * @param {CommandBuildContext} buildContext
  * @param {string[]} argumentNames

@@ -5,6 +5,7 @@
  *   MetaChild,
  *   MetaRequires,
  *   Meta,
+ *   CommandSource,
  * } from "./fragment.js"
  * @import { Chunk } from "./chunk.js"
  */
@@ -12,7 +13,7 @@
 const { fragment } = require("./fragment.js");
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {ExecutionHandler<Source>} handler
  * @return {MetaExecutes<Source>}
  */
@@ -24,7 +25,7 @@ function executes(handler) {
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {(source: Source) => boolean} handler
  * @return {MetaRequires<Source>}
  */
@@ -36,7 +37,7 @@ function requires(handler) {
 }
 
 /**
- * @template Source
+ * @template {CommandSource} Source
  * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @return {MetaChild<Source>}
