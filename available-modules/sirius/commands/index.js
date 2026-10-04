@@ -14,14 +14,17 @@
  * @type {(fragment: LiteralFragment<any>, onunregister: () => void) => RegisteredCommand}
  */
 let registerCommand;
+let environment = /** @type {any} */ (module).path.split("/")[1];
 
-switch (/** @type {any} */ (module).path.split("/")[1]) {
+switch (environment) {
     case "client":
         registerCommand = require("./client/addRemove.js").registerClientCommand;
         break;
     case "server":
         registerCommand = require("./server/addRemove.js").registerServerCommand;
         break;
+    default:
+        throw new Error(`Unknown execution environment ${environment} (calculated from path)`);
 }
 
 const tree = require("./universal/tree.js");
