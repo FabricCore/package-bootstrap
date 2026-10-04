@@ -24,6 +24,7 @@ const { chunksToString, literal } = require("./chunk.js");
  * @typedef {{
  *   chunk: LiteralChunk,
  *   executes: ExecutionHandler<Source> | null,
+ *   requires: ((source: Source) => boolean) | null,
  *   children: Set<Fragment<Source>>
  * }} LiteralFragment
  */
@@ -33,6 +34,7 @@ const { chunksToString, literal } = require("./chunk.js");
  * @typedef {{
  *   chunk: ArgumentChunk,
  *   executes: ExecutionHandler<Source> | null,
+ *   requires: ((source: Source) => boolean) | null,
  *   children: Set<Fragment<Source>>
  * }} ArgumentFragment
  */
@@ -42,6 +44,7 @@ const { chunksToString, literal } = require("./chunk.js");
  * @typedef {{
  *   chunk: Chunk,
  *   executes: ExecutionHandler<Source> | null,
+ *   requires: ((source: Source) => boolean) | null,
  *   children: Set<Fragment<Source>>
  * }} Fragment
  */
@@ -64,7 +67,15 @@ const { chunksToString, literal } = require("./chunk.js");
 
 /**
  * @template Source
- * @typedef {MetaChild<Source> | MetaExecutes<Source>} Meta
+ * @typedef {{
+ *   type: "requires",
+ *   value: (source: Source) => boolean
+ * }} MetaRequires
+ */
+
+/**
+ * @template Source
+ * @typedef {MetaChild<Source> | MetaExecutes<Source> | MetaRequires<Source>} Meta
  */
 
 /**
@@ -99,6 +110,11 @@ function mergeFragments(fragments, path) {
                             `Multiple fragments provide handler function for /${chunksToString(currentPath)}`,
                         );
 
+                    if (fragments.filter((fragment) => fragment.requires).length > 1)
+                        throw new Error(
+                            `Multiple fragments provide requires predicate for /${chunksToString(currentPath)}`,
+                        );
+
                     if (fragments[0].chunk.type === "argument") {
                         const expectedArgumentType = fragments[0].chunk.argumentTypeId;
                         fragments.forEach((fragment) => {
@@ -118,6 +134,7 @@ function mergeFragments(fragments, path) {
                     const mergedFragment = {
                         chunk: fragments[0].chunk,
                         executes: fragments.find((fragment) => fragment.executes)?.executes ?? null,
+                        requires: fragments.find((fragment) => fragment.requires)?.requires ?? null,
                         children: mergeFragments(
                             fragments.flatMap((fragment) => Array.from(fragment.children)),
                             currentPath,
@@ -144,23 +161,30 @@ function mergeFragments(fragments, path) {
 function fragment(chunks, additionalMetadata = []) {
     if (!Array.isArray(chunks)) chunks = [chunks];
 
-    if (chunks.length === 0) throw new Error("fragment should supply at least 1 chunk, got 0");
-
-    return {
-        chunk: typeof chunks[0] === "string" ? literal(chunks[0]) : chunks[0],
-        executes:
-            chunks.length === 1
-                ? (additionalMetadata.find((meta) => meta.type === "executes")?.value ?? null)
-                : null,
-        children:
-            chunks.length === 1
-                ? new Set(
-                      additionalMetadata
-                          .filter((meta) => meta.type === "child")
-                          .map((meta) => meta.value),
-                  )
-                : new Set([fragment(chunks.slice(1), additionalMetadata)]),
-    };
+    switch (chunks.length) {
+        case 0:
+            throw new Error("fragment should supply at least 1 chunk, got 0");
+        case 1:
+            return {
+                chunk: typeof chunks[0] === "string" ? literal(chunks[0]) : chunks[0],
+                executes:
+                    additionalMetadata.find((meta) => meta.type === "executes")?.value ?? null,
+                requires:
+                    additionalMetadata.find((meta) => meta.type === "requires")?.value ?? null,
+                children: new Set(
+                    additionalMetadata
+                        .filter((meta) => meta.type === "child")
+                        .map((meta) => meta.value),
+                ),
+            };
+        default:
+            return {
+                chunk: typeof chunks[0] === "string" ? literal(chunks[0]) : chunks[0],
+                executes: null,
+                requires: null,
+                children: new Set([fragment(chunks.slice(1), additionalMetadata)]),
+            };
+    }
 }
 
 module.exports = { fragment, mergeFragments };

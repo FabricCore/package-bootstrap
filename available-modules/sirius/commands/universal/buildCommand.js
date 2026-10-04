@@ -6,8 +6,6 @@
 const LiteralArgumentBuilder = Java.type("com.mojang.brigadier.builder.LiteralArgumentBuilder");
 const RequiredArgumentBuilder = Java.type("com.mojang.brigadier.builder.RequiredArgumentBuilder");
 const JavaObject = Java.type("java.lang.Object");
-const Command = Java.type("com.mojang.brigadier.Command");
-const CommandExt = Java.extend(Command);
 
 /**
  * @template Source
@@ -27,7 +25,9 @@ const CommandExt = Java.extend(Command);
  * @param {string[]} argumentNames
  * @returns {void}
  */
-function finishBuilder(builder, { executes, children }, buildContext, argumentNames) {
+function finishBuilder(builder, { executes, requires, children }, buildContext, argumentNames) {
+    if (requires !== null) builder.requires(requires);
+
     if (executes !== null)
         builder.executes((ctx) =>
             executes(ctx, ...argumentNames.map((name) => ctx.getArgument(name, JavaObject.class))),
