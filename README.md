@@ -24,10 +24,10 @@ moduleIndex.js --> dag.js
 
 ## Todo
 
-- [ ] Commands
-  - [ ] Server commands
+- [x] Commands
+  - [x] Server commands
   - [ ] Suggestions
-  - [ ] Require gating
+  - [x] Require gating
 - [ ] Devtools
   - [ ] Loading/unloading modules from `available-modules` into client or server
 
