@@ -21,10 +21,39 @@ function printError(e) {
     else console.log(e);
 }
 
+class CreatedLoader {
+    /**
+     * @param {ModuleIndex} index
+     */
+    constructor(index) {
+        /** @type {ModuleIndex} */
+        this.index = index;
+    }
+
+    /**
+     * @returns {string}
+     */
+    base() {
+        return this.index.base;
+    }
+
+    loadAll() {
+        this.index.loadAll();
+    }
+
+    destroy() {
+        if (!createdIndices.has(this.base()))
+            throw new Error(`Cannot destroy loader base=${this.base()} because it does not exist`);
+
+        createdIndices.get(this.base())?.destroy();
+        createdIndices.delete(this.base());
+    }
+}
+
 /**
  * @typedef {import("./moduleIndex.js")} ModuleIndex
  * @param {string} base
- * @returns {ModuleIndex}
+ * @returns {CreatedLoader}
  */
 function createLoader(base) {
     const index = ModuleIndex.createIndex({
@@ -54,23 +83,11 @@ function createLoader(base) {
 
     createdIndices.set(base, index);
 
-    return index;
-}
-
-/**
- * @param {string} base
- * @returns {void}
- */
-function destroyLoader(base) {
-    if (!createdIndices.has(base))
-        throw new Error(`Cannot destroy loader base=${base} because it does not exist`);
-
-    createdIndices.get(base)?.destroy();
-    createdIndices.delete(base);
+    return new CreatedLoader(index);
 }
 
 module.onunload = () => {
     createdIndices.forEach((index) => index.destroy());
 };
 
-module.exports = { createLoader, destroyLoader };
+module.exports = { createLoader };

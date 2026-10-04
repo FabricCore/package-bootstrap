@@ -15,7 +15,7 @@
  */
 let registerCommand;
 
-switch ((/** @type {any} */ (module)).path.split("/")[1]) {
+switch (/** @type {any} */ (module).path.split("/")[1]) {
     case "client":
         registerCommand = require("./client/addRemove.js").registerClientCommand;
         break;
