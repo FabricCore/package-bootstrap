@@ -1,6 +1,7 @@
 /** @type {typeof import("../../../bootstrap/moduleIndex.js")} */
 /// @ts-expect-error
 const moduleIndex = module.import("../../../bootstrap/moduleIndex.js", []);
+const { base } = require("sirius/fs");
 
 /**
  * toLoad: package path
@@ -8,12 +9,10 @@ const moduleIndex = module.import("../../../bootstrap/moduleIndex.js", []);
  * toUnload: package id
  *
  * @import {ChangeRequest, Rejection, Accept} from "../../../bootstrap/moduleIndex.js"
- * @param {string} base
- * @param {boolean} apply
- * @param {Pick<ChangeRequest, "toLoad" | "toReplace" | "toUnload">} changes
+ * @param {Pick<ChangeRequest, "toLoad" | "toReplace" | "toUnload" | "apply">} changes
  * @returns {Rejection | Accept}
  */
-function propose(base, apply, { toLoad, toReplace, toUnload }) {
+function propose({ toLoad, toReplace, toUnload, apply }) {
     return moduleIndex.getIndex(base).propose({
         toLoad,
         toReplace,

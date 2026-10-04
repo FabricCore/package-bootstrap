@@ -8,5 +8,7 @@
     "license": "ARR",
     "author": "sirius",
     "main": "index.js",
-    "dependencies": {}
+    "dependencies": {
+        "sirius/fs": ">=0.1.0"
+    }
 }

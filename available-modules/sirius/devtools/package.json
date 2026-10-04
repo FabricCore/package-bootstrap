@@ -1,0 +1,14 @@
+{
+    "name": "devtools",
+    "version": "0.1.0",
+    "description": "Developer's best friend",
+    "keywords": [],
+    "license": "ARR",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {
+        "sirius/commands": ">=0.1.0",
+        "sirius/fs": ">=0.1.0",
+        "sirius/loader-api": ">=0.1.0"
+    }
+}
