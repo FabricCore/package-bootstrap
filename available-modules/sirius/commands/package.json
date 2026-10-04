@@ -9,6 +9,7 @@
     "author": "sirius",
     "main": "index.js",
     "dependencies": {
-        "sirius/array-backed-event": "0.1.0"
+        "sirius/array-backed-event": ">=0.1.0",
+        "sirius/fs": ">=0.1.0"
     }
 }

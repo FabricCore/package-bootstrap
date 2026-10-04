@@ -1,0 +1,10 @@
+{
+    "name": "fs",
+    "version": "0.1.0",
+    "description": "Stuff to do with files",
+    "keywords": [],
+    "license": "ARR",
+    "author": "sirius",
+    "main": "index.js",
+    "dependencies": {}
+}

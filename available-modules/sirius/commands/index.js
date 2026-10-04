@@ -10,27 +10,26 @@
  * @import { LiteralFragment } from "./universal/fragment.js";
  */
 
+const { base } = require("sirius/fs");
+
 /**
  * @type {(fragment: LiteralFragment<any>, onunregister: () => void) => RegisteredCommand}
  */
-let registerCommand;
-let environment = /** @type {any} */ (module).path.split("/")[1];
-
-switch (environment) {
-    case "client":
-        registerCommand = require("./client/addRemove.js").registerClientCommand;
-        break;
-    case "server":
-        registerCommand = require("./server/addRemove.js").registerServerCommand;
-        break;
-    default:
-        throw new Error(`Unknown execution environment ${environment} (calculated from path)`);
-}
+const registerCommand =
+    base === "client"
+        ? require("./client/addRemove.js").registerClientCommand
+        : require("./server/addRemove.js").registerServerCommand;
 
 const tree = require("./universal/tree.js");
 const { fragment } = require("./universal/fragment.js");
 const { arg, literal } = require("./universal/chunk.js");
-const { executes, child, requires } = require("./universal/helpers.js");
+const {
+    executes,
+    child,
+    requires,
+    UnifiedSource,
+    unifyContext,
+} = require("./universal/helpers.js");
 
 /**
  * @template {CommandSource} Source
@@ -56,4 +55,6 @@ module.exports = {
     executes,
     requires,
     child,
+    UnifiedSource,
+    unifyContext,
 };
