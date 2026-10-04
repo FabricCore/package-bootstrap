@@ -3,6 +3,7 @@
  *   ExecutionHandler,
  *   MetaExecutes,
  *   MetaChild,
+ *   MetaRequires,
  *   Meta,
  * } from "./fragment.js"
  * @import { Chunk } from "./chunk.js"
@@ -24,6 +25,18 @@ function executes(handler) {
 
 /**
  * @template Source
+ * @param {(source: Source) => boolean} handler
+ * @return {MetaRequires<Source>}
+ */
+function requires(handler) {
+    return {
+        type: "requires",
+        value: handler,
+    };
+}
+
+/**
+ * @template Source
  * @param {(Chunk | string)[] | Chunk | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @return {MetaChild<Source>}
@@ -35,4 +48,4 @@ function child(chunks, ...additionalMetadata) {
     };
 }
 
-module.exports = { child, executes };
+module.exports = { child, executes, requires };

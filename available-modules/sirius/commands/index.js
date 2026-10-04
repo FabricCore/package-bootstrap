@@ -30,7 +30,7 @@ switch (environment) {
 const tree = require("./universal/tree.js");
 const { fragment } = require("./universal/fragment.js");
 const { arg, literal } = require("./universal/chunk.js");
-const { executes, child } = require("./universal/helpers.js");
+const { executes, child, requires } = require("./universal/helpers.js");
 
 /**
  * @template Source
@@ -54,5 +54,6 @@ module.exports = {
     arg,
     literal,
     executes,
+    requires,
     child,
 };
