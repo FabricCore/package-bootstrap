@@ -81,6 +81,23 @@ function suggestAvailablePackage(_ctx, builder) {
     );
 }
 
+/**
+ * @type {UnifiedSuggestionHandler<CommandSource>}
+ */
+function suggestReplacableablePackage(_ctx, builder) {
+    const alreadyLoaded = new Set(loadedPackages());
+    const packageNames = availablePackages().filter((s) => alreadyLoaded.has(s));
+    const remaining = builder.getRemaining(); // all values before cursor
+    const wordStart = remaining.lastIndexOf(" ") + 1;
+    const word = builder.createOffset(builder.getStart() + wordStart);
+
+    const incompletePackageName = remaining.slice(wordStart);
+    return SharedSuggestionProvider.suggest(
+        packageNames.filter((id) => id.startsWith(incompletePackageName)),
+        word,
+    );
+}
+
 module.exports = {
     children: [
         child(
@@ -97,6 +114,43 @@ module.exports = {
                 if (res.result === "rejected")
                     ctx.getSource().error(`Load rejected. ${rejectReason(res)}`);
                 else ctx.getSource().reply("Load accepted");
+            }),
+        ),
+
+        child(
+            ["replace", arg("packages", "greedy", { suggests: suggestAvailablePackage })],
+            executes((ctx, /** @type {string} */ packages) => {
+                const res = propose({
+                    toReplace: packages
+                        .split(" ")
+                        .filter((s) => s.length !== 0)
+                        .map((s) => `available-packages/${s}`),
+                    apply: true,
+                });
+
+                if (res.result === "rejected")
+                    ctx.getSource().error(`Replace rejected. ${rejectReason(res)}`);
+                else ctx.getSource().reply("Replace accepted");
+            }),
+        ),
+
+        child(
+            ["reload", arg("packages", "greedy", { suggests: suggestExistingPackage })],
+            executes((ctx, /** @type {string} */ packages) => {
+                const res = propose({
+                    toReplace: packages
+                        .split(" ")
+                        .filter((s) => s.length !== 0)
+                        .map((s) => `/${base}/${s}`),
+                    apply: true,
+                });
+
+                if (res.result === "rejected")
+                    ctx.getSource().error(`Reload rejected. ${rejectReason(res)}`);
+                else ctx.getSource().reply("Reload accepted");
+
+                return 1; // important, errors with "context closed" if removed!
+                // this is because using "??" accesses context for some reason
             }),
         ),
 
