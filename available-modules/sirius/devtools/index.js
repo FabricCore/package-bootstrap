@@ -5,6 +5,48 @@ const { propose } = require("sirius/loader-api");
 const Permissions = Java.type("net.minecraft.server.permissions.Permissions");
 const CommandSourceStack = Java.type("net.minecraft.commands.CommandSourceStack");
 
+/**
+ * @param {Object} param0
+ * @param {string[]} param0.ids
+ * @returns {string}
+ */
+function idsToList({ ids }) {
+    return ids.map((s) => `- ${s}`).join("\n");
+}
+
+/**
+ * @import { DependencyViolation } from "/bootstrap/moduleIndex";
+ * @param {DependencyViolation} violation
+ * @returns {string}
+ */
+function depViolation({ dependency, dependent, error, requiredVersion }) {
+    const errorMsg =
+        error.kind === "missing"
+            ? "is missing"
+            : `found ${dependent} [${error.gotVersion.chunks.join(".")}]`;
+    return `${dependency} requires ${dependent} [${requiredVersion}] but ${errorMsg}`;
+}
+
+/**
+ * @import { Rejection } from "/bootstrap/moduleIndex";
+ * @param {Rejection} rej
+ * @returns {string}
+ */
+function rejectReason(rej) {
+    switch (rej.reason.type) {
+        case "nonDisjoint":
+            return `The list of packages to unload contains duplicates:\n${idsToList(rej.reason)}`;
+        case "loadNameCollision":
+            return `Some of the packages to load are already loaded:\n${idsToList(rej.reason)}`;
+        case "unloadReplaceNonExistingPackage":
+            return `The package to unload/replace does not already exist:\n${idsToList(rej.reason)}`;
+        case "dependentBlocksUnload":
+            return `The package to unload is required by another package:\n${rej.reason.packages.map(({ id, requiredBy }) => `- ${id} (required by ${requiredBy.join(" ")})`)}`;
+        case "dependencyViolation":
+            return `Some of the packages does not have the required dependencies:\n${rej.reason.cases.map(depViolation)}`;
+    }
+}
+
 const cmd = newCommand(
     base === "client" ? "dev" : "devsrv",
 
@@ -17,11 +59,18 @@ const cmd = newCommand(
 
     child(
         ["load", arg("packages", "greedy")],
-        executes((_ctx, /** @type {string} */ packages) => {
-            propose({
-                toLoad: packages.split(" ").filter((s) => s.length !== 0),
+        executes((ctx, /** @type {string} */ packages) => {
+            const res = propose({
+                toLoad: packages
+                    .split(" ")
+                    .filter((s) => s.length !== 0)
+                    .map((s) => `available-modules/${s}`),
                 apply: true,
             });
+
+            if (res.result === "rejected")
+                ctx.getSource().error(`Load rejected. ${rejectReason(res)}`);
+            else ctx.getSource().reply("Load accepted");
         }),
     ),
 
@@ -33,11 +82,9 @@ const cmd = newCommand(
                 apply: true,
             });
 
-            if (res.result === "rejected") {
-                ctx.getSource().reply("Unload rejected");
-            } else {
-                ctx.getSource().reply("Unload accepted");
-            }
+            if (res.result === "rejected")
+                ctx.getSource().error(`Unload rejected. ${rejectReason(res)}`);
+            else ctx.getSource().reply("Unload accepted");
 
             return 1; // important, errors with "context closed" if removed!
             // this is because using "??" accesses context for some reason

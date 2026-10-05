@@ -43,6 +43,14 @@ const Dag = module.import("./dag.js", []);
  * there is a dependency violation
  * @typedef {{ type: "dependencyViolation", cases: DependencyViolation[]}} DependencyViolationRejection
  *
+ * @typedef {{
+ *   dependent: string,
+ *   dependency: string,
+ *   requiredVersion: SemverPattern,
+ *   error: {kind: "missing"} | {kind: "versionMismatch", gotVersion: Semver }
+ * }} DependencyViolation
+ *
+ *
  * @typedef {NonDisjointRejection | LoadNameCollisionRejection | UnloadReplaceNotFoundRejection | DepBlocksUnloadRejection | DependencyViolationRejection} RejectionReason
  * @typedef {{result: "rejected", reason: RejectionReason}} Rejection
  * @typedef {{result: "accepted"}} Accept
@@ -153,13 +161,6 @@ class ModuleIndex {
     }
 
     /**
-     * @typedef {{
-     *   dependent: string,
-     *   dependency: string,
-     *   requiredVersion: SemverPattern,
-     *   error: {kind: "missing"} | {kind: "versionMismatch", gotVersion: Semver }
-     * }} DependencyViolation
-     *
      * @param {Map<string, Manifest>} manifests
      * @returns {DependencyViolation[]}
      */
