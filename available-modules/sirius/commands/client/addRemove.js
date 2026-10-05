@@ -36,11 +36,10 @@ class RegisteredClientCommand {
         if (this.hasUnregistered) return;
 
         this.hasUnregistered = true;
+        this.onunregister();
 
         const dispatcher = ClientCommands.getActiveDispatcher();
         if (dispatcher === null) return;
-
-        this.onunregister();
 
         const root = dispatcher.getRoot();
 
@@ -52,6 +51,8 @@ class RegisteredClientCommand {
             field.setAccessible(true);
             field.get(root).remove(this.name);
         });
+
+        ClientCommands.refreshCommandCompletions();
     }
 }
 
