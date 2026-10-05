@@ -33,7 +33,7 @@ const {
 
 /**
  * @template {CommandSource} Source
- * @param {(Chunk | string)[] | Chunk | string} chunks
+ * @param {(Chunk<Source> | string)[] | Chunk<Source> | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @returns {RegisteredCommand}
  */

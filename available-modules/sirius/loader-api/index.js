@@ -21,6 +21,14 @@ function propose({ toLoad, toReplace, toUnload, apply }) {
     });
 }
 
+/**
+ * @returns {string[]}
+ */
+function loadedPackages() {
+    return moduleIndex.getIndex(base).manifests.keys().toArray();
+}
+
 module.exports = {
     propose,
+    loadedPackages,
 };

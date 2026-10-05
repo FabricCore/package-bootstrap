@@ -1,6 +1,10 @@
 /** @typedef {import("/types/full/com/mojang/brigadier/arguments/ArgumentType").ArgumentType<any>} ArgumentType */
 /** @typedef {import("/types/full/net/minecraft/commands/CommandBuildContext").CommandBuildContext} CommandBuildContext */
 
+/** @import { SuggestionProvider } from "/types/full/com/mojang/brigadier/suggestion/SuggestionProvider" */
+/** @import { CommandSource } from "./fragment.js" */
+/** @import { UnifiedSuggestionHandler } from "./helpers.js" */
+
 const BoolArgumentType = Java.type("com.mojang.brigadier.arguments.BoolArgumentType");
 const DoubleArgumentType = Java.type("com.mojang.brigadier.arguments.DoubleArgumentType");
 const FloatArgumentType = Java.type("com.mojang.brigadier.arguments.FloatArgumentType");
@@ -94,8 +98,21 @@ const ResourceKey = Java.type("net.minecraft.resources.ResourceKey");
  * @typedef {(ctx: CommandBuildContext) => ArgumentType} ArgumentTypeFactory
  * @typedef {(options: ArgumentOptions, ctx: CommandBuildContext) => ArgumentType} ArgumentTypeBuilder
  * @typedef {{type: "literal", value: string}} LiteralChunk
- * @typedef {{type: "argument", value: string, argumentTypeId: ArgumentTypeId, argumentType: ArgumentTypeFactory}} ArgumentChunk
- * @typedef {LiteralChunk | ArgumentChunk} Chunk
+ */
+
+/**
+ * @template {CommandSource} Source
+ * @typedef {SuggestionProvider<Source> | UnifiedSuggestionHandler<Source>} Suggests
+ */
+
+/**
+ * @template {CommandSource} Source
+ * @typedef {{type: "argument", value: string, argumentTypeId: ArgumentTypeId, argumentType: ArgumentTypeFactory, suggestion?: Suggests<Source>}} ArgumentChunk
+ */
+
+/**
+ * @template {CommandSource} Source
+ * @typedef {LiteralChunk | ArgumentChunk<Source>} Chunk
  */
 
 /**
@@ -270,10 +287,11 @@ function literal(value) {
 }
 
 /**
+ * @template {CommandSource} Source
  * @param {string} label
  * @param {ArgumentTypeId} kind
- * @param {ArgumentOptions} [options]
- * @returns {ArgumentChunk}
+ * @param {ArgumentOptions & {suggests?: Suggests<Source>}} [options]
+ * @returns {ArgumentChunk<Source>}
  */
 function arg(label, kind, options) {
     // a default parameter only kicks in for this context's undefined, not one passed in from another module
@@ -290,6 +308,7 @@ function arg(label, kind, options) {
     return {
         type: "argument",
         value: label,
+        suggestion: options?.suggests,
         argumentTypeId: kind,
         argumentType: (ctx) => {
             if (ctx == undefined && NEEDS_CONTEXT.has(kind))
@@ -301,7 +320,8 @@ function arg(label, kind, options) {
 }
 
 /**
- * @param {Chunk} chunk
+ * @template {CommandSource} Source
+ * @param {Chunk<Source>} chunk
  * @returns {string}
  */
 function chunkToString(chunk) {
@@ -314,7 +334,8 @@ function chunkToString(chunk) {
 }
 
 /**
- * @param {Chunk[]} chunks
+ * @template {CommandSource} Source
+ * @param {Chunk<Source>[]} chunks
  * @returns {string}
  */
 function chunksToString(chunks) {

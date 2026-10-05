@@ -1,5 +1,7 @@
+const SharedSuggestionProvider = Java.type("net.minecraft.commands.SharedSuggestionProvider");
+
 const { arg, executes, child } = require("sirius/commands");
-const { propose } = require("sirius/loader-api");
+const { propose, loadedPackages } = require("sirius/loader-api");
 
 /**
  * @param {Object} param0
@@ -43,6 +45,24 @@ function rejectReason(rej) {
     }
 }
 
+/**
+ * @import { CommandSource } from "sirius/commands/universal/fragment";
+ * @import { UnifiedSuggestionHandler } from "sirius/commands/universal/helpers";
+ * @type {UnifiedSuggestionHandler<CommandSource>}
+ */
+function suggestExistingPackage(_ctx, builder) {
+    const packageNames = loadedPackages();
+    const remaining = builder.getRemaining(); // all values before cursor
+    const wordStart = remaining.lastIndexOf(" ") + 1;
+    const word = builder.createOffset(builder.getStart() + wordStart);
+
+    const incompletePackageName = remaining.slice(wordStart);
+    return SharedSuggestionProvider.suggest(
+        packageNames.filter((id) => id.startsWith(incompletePackageName)),
+        word,
+    );
+}
+
 module.exports = {
     children: [
         child(
@@ -63,7 +83,7 @@ module.exports = {
         ),
 
         child(
-            ["unload", arg("packages", "greedy")],
+            ["unload", arg("packages", "greedy", { suggests: suggestExistingPackage })],
             executes((ctx, /** @type {string} */ packages) => {
                 const res = propose({
                     toUnload: packages.split(" ").filter((s) => s.length !== 0),

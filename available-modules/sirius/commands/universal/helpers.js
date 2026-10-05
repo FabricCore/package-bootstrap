@@ -21,11 +21,16 @@
  * @import { RegistryAccess } from "/types/full/net/minecraft/core/RegistryAccess"
  * @import { FeatureFlagSet } from "/types/full/net/minecraft/world/flag/FeatureFlagSet"
  * @import { Collection } from "/types/full/java/util/Collection"
+ * @import { CompletableFuture } from "/types/full/java/util/concurrent/CompletableFuture"
+ * @import { Suggestions } from "/types/full/com/mojang/brigadier/suggestion/Suggestions"
+ * @import { SuggestionsBuilder } from "/types/full/com/mojang/brigadier/suggestion/SuggestionsBuilder"
+ * @import { SuggestionProvider } from "/types/full/com/mojang/brigadier/suggestion/SuggestionProvider"
  */
 
 const { fragment } = require("./fragment.js");
 
 const CommandSourceStack = Java.type("net.minecraft.commands.CommandSourceStack");
+const SuggestionProvider = Java.type("com.mojang.brigadier.suggestion.SuggestionProvider");
 const Component = Java.type("net.minecraft.network.chat.Component");
 
 /**
@@ -265,6 +270,31 @@ function executes(handler) {
 
 /**
  * @template {CommandSource} Source
+ * @callback UnifiedSuggestionHandler
+ * @param {UnifiedContext<Source>} ctx
+ * @param {SuggestionsBuilder} builder
+ * @returns {CompletableFuture<Suggestions> | void} void builds whatever was added to builder
+ */
+
+/**
+ * a java SuggestionProvider passes through untouched, a js function
+ * receives a UnifiedContext instead of the raw brigadier context
+ *
+ * @template {CommandSource} Source
+ * @param {SuggestionProvider<Source> | UnifiedSuggestionHandler<Source>} provider
+ * @returns {SuggestionProvider.Fn<Source>}
+ */
+function suggestionProvider(provider) {
+    // typeof can't tell them apart: a host object of a functional interface is executable too
+    if (SuggestionProvider.class.isInstance(provider))
+        return /** @type {SuggestionProvider<Source>} */ (provider);
+
+    const handler = /** @type {UnifiedSuggestionHandler<Source>} */ (provider);
+    return (ctx, builder) => handler(unifyContext(ctx), builder) ?? builder.buildFuture();
+}
+
+/**
+ * @template {CommandSource} Source
  * @param {(source: Source) => boolean} handler
  * @return {MetaRequires<Source>}
  */
@@ -277,7 +307,7 @@ function requires(handler) {
 
 /**
  * @template {CommandSource} Source
- * @param {(Chunk | string)[] | Chunk | string} chunks
+ * @param {(Chunk<Source> | string)[] | Chunk<Source> | string} chunks
  * @param {...Meta<Source>} additionalMetadata
  * @return {MetaChild<Source>}
  */
@@ -288,4 +318,4 @@ function child(chunks, ...additionalMetadata) {
     };
 }
 
-module.exports = { child, executes, requires, UnifiedSource, unifyContext };
+module.exports = { child, executes, requires, suggestionProvider, UnifiedSource, unifyContext };

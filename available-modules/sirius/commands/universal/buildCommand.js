@@ -7,6 +7,8 @@ const LiteralArgumentBuilder = Java.type("com.mojang.brigadier.builder.LiteralAr
 const RequiredArgumentBuilder = Java.type("com.mojang.brigadier.builder.RequiredArgumentBuilder");
 const JavaObject = Java.type("java.lang.Object");
 
+const { suggestionProvider } = require("./helpers.js");
+
 /**
  * @template {CommandSource} Source
  * @typedef {import("/types/full/com/mojang/brigadier/builder/LiteralArgumentBuilder").LiteralArgumentBuilder<Source>} LiteralArgumentBuilder
@@ -86,6 +88,9 @@ function buildArgument(fragment, buildContext, argumentNames = []) {
         fragment.chunk.value,
         fragment.chunk.argumentType(buildContext),
     );
+
+    if (fragment.chunk.suggestion) builder.suggests(suggestionProvider(fragment.chunk.suggestion));
+
     finishBuilder(builder, fragment, buildContext, argumentNames);
     return builder;
 }

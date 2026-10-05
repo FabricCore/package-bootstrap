@@ -37,7 +37,7 @@ const { chunksToString, literal } = require("./chunk.js");
 /**
  * @template {CommandSource} Source
  * @typedef {{
- *   chunk: ArgumentChunk,
+ *   chunk: ArgumentChunk<Source>,
  *   executes: ExecutionHandler<Source> | null,
  *   requires: ((source: Source) => boolean) | null,
  *   children: Set<Fragment<Source>>
@@ -47,7 +47,7 @@ const { chunksToString, literal } = require("./chunk.js");
 /**
  * @template {CommandSource} Source
  * @typedef {{
- *   chunk: Chunk,
+ *   chunk: Chunk<Source>,
  *   executes: ExecutionHandler<Source> | null,
  *   requires: ((source: Source) => boolean) | null,
  *   children: Set<Fragment<Source>>
@@ -88,11 +88,11 @@ const { chunksToString, literal } = require("./chunk.js");
  *
  * @template {CommandSource} Source
  * @param {Fragment<Source>[]} fragments
- * @param {Chunk[]} path
+ * @param {Chunk<Source>[]} path
  * @returns {Set<Fragment<Source>>}
  */
 function mergeFragments(fragments, path) {
-    /** @type {Map<Chunk["type"], Map<string, Fragment<Source>[]>>} */
+    /** @type {Map<Chunk<Source>["type"], Map<string, Fragment<Source>[]>>} */
     let fragmentMap = new Map();
 
     fragments.forEach((fragment) =>
@@ -159,7 +159,7 @@ function mergeFragments(fragments, path) {
 
 /**
  * @template {CommandSource} Source
- * @param {(Chunk | string)[] | Chunk | string} chunks
+ * @param {(Chunk<Source> | string)[] | Chunk<Source> | string} chunks
  * @param {Meta<Source>[]} [additionalMetadata=[]]
  * @returns {Fragment<Source>}
  */
