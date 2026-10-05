@@ -1,7 +1,8 @@
 const SharedSuggestionProvider = Java.type("net.minecraft.commands.SharedSuggestionProvider");
 
 const { arg, executes, child } = require("sirius/commands");
-const { propose, loadedPackages } = require("sirius/loader-api");
+const { propose, loadedPackages, availablePackages } = require("sirius/loader-api");
+const { base } = require("sirius/fs");
 
 /**
  * @param {Object} param0
@@ -63,16 +64,33 @@ function suggestExistingPackage(_ctx, builder) {
     );
 }
 
+/**
+ * @type {UnifiedSuggestionHandler<CommandSource>}
+ */
+function suggestAvailablePackage(_ctx, builder) {
+    const alreadyLoaded = new Set(loadedPackages());
+    const packageNames = availablePackages().filter((s) => !alreadyLoaded.has(s));
+    const remaining = builder.getRemaining(); // all values before cursor
+    const wordStart = remaining.lastIndexOf(" ") + 1;
+    const word = builder.createOffset(builder.getStart() + wordStart);
+
+    const incompletePackageName = remaining.slice(wordStart);
+    return SharedSuggestionProvider.suggest(
+        packageNames.filter((id) => id.startsWith(incompletePackageName)),
+        word,
+    );
+}
+
 module.exports = {
     children: [
         child(
-            ["load", arg("packages", "greedy")],
+            ["load", arg("packages", "greedy", { suggests: suggestAvailablePackage })],
             executes((ctx, /** @type {string} */ packages) => {
                 const res = propose({
                     toLoad: packages
                         .split(" ")
                         .filter((s) => s.length !== 0)
-                        .map((s) => `available-modules/${s}`),
+                        .map((s) => `available-packages/${s}`),
                     apply: true,
                 });
 

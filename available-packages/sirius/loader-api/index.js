@@ -1,7 +1,7 @@
 /** @type {typeof import("../../../bootstrap/moduleIndex.js")} */
 /// @ts-expect-error
 const moduleIndex = module.import("../../../bootstrap/moduleIndex.js", []);
-const { base } = require("sirius/fs");
+const { base, listFiles, fileType, fileExists } = require("sirius/fs");
 
 /**
  * toLoad: package path
@@ -28,7 +28,22 @@ function loadedPackages() {
     return moduleIndex.getIndex(base).manifests.keys().toArray();
 }
 
+function availablePackages() {
+    return listFiles("/available-packages")
+        .flatMap((author) => {
+            if (fileType(`/available-packages/${author}`) === "file") return null;
+
+            return listFiles(`/available-packages/${author}`).map((packageName) =>
+                fileExists(`/available-packages/${author}/${packageName}`)
+                    ? `${author}/${packageName}`
+                    : null,
+            );
+        })
+        .filter((id) => id !== null);
+}
+
 module.exports = {
     propose,
     loadedPackages,
+    availablePackages,
 };

@@ -29,7 +29,7 @@ moduleIndex.js --> dag.js
   - [ ] Suggestions
   - [x] Require gating
 - [ ] Devtools
-  - [ ] Loading/unloading modules from `available-modules` into client or server
+  - [ ] Loading/unloading modules from `available-packages` into client or server
 
 ---
 
